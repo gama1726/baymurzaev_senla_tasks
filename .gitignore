@@ -1,8 +1,8 @@
 # Default ignored files
 /shelf/
-.idea
-.vscode
-*.xml
+.idea/
+.vscode/
+*.iml
 # Editor-based HTTP Client requests
 /httpRequests/
 # Datasource local storage ignored files
