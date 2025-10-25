@@ -1,5 +1,5 @@
 class Rose extends Flower{
-    public Rose(){
-        super("Роза",100);
+    public Rose(String name,double price){
+        super(name,price);
     }
 }

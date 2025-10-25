@@ -1,5 +1,5 @@
 class Lily extends Flower{
-    public Lily(){
-        super("Лилия",50);
+    public Lily(String name,double price){
+        super(name,price);
     }
 }

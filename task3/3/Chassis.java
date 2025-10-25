@@ -1,7 +1,6 @@
 public class Chassis implements IProductPart{
     @Override
-    public String toString()
-    {
+    public String toString(){
         return "Шасси";
     }
 }

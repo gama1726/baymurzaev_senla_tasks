@@ -16,15 +16,15 @@ class Buket{
         
         switch (sc.nextInt()) {
             case 1:
-                flowers.add(new Lily());
+                flowers.add(new Lily("Лилия",50));
                 showBuket();
                 break;
             case 2:
-                flowers.add(new Rose());
+                flowers.add(new Rose("Роза",100));
                 showBuket();
                 break;
             case 3:
-                flowers.add(new Tulip());
+                flowers.add(new Tulip("Тюльпан",75));
                 showBuket();
                 break;
             default:

@@ -1,6 +1,6 @@
 abstract class Flower{
-    protected String name;
-    protected double price;
+    private String name;
+    private double price;
      Flower(String name,double price){
          this.name=name;
          this.price=price;
@@ -8,7 +8,7 @@ abstract class Flower{
      protected double getPrice(){
          return price;
     }
-    protected String getName(){
+     protected String getName(){
          return name;
     }
 

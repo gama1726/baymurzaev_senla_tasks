@@ -1,5 +1,5 @@
 class Tulip extends Flower{
-    public Tulip(){
-        super("Тюльпан",75);
+    public Tulip(String name,double price){
+        super(name,price);
     }
 }
