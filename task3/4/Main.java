@@ -13,6 +13,7 @@ public class Main {
     GarageSlot s2 = new GarageSlot(102);
     manager.addGarageSlot(s1);
     manager.addGarageSlot(s2);
+    manager.showFreeSlots();
     //Время
     LocalDateTime now = LocalDateTime.now();
     TimeSlot t1 = new TimeSlot(now.plusMinutes(0), now.plusMinutes(60));
