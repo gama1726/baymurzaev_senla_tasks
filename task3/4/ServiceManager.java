@@ -60,4 +60,14 @@ public class ServiceManager {
             }
         }
     }
+    public void showFreeSlots(){
+        for(GarageSlot s : garageSlots){
+            if(s.getStatus() == false){
+                System.out.println(s);
+            }
+            else{
+                System.out.println("FFFFFFFFFFFF");
+            }
+        }
+    }
 }
