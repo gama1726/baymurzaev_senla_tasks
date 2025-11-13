@@ -3,7 +3,7 @@ package autoservice;
 import autoservice.model.GarageSlot;
 import autoservice.model.Mechanic;
 import autoservice.service.ServiceManager;
-import autoservice.ui.menu.DefaultMenuFactory;
+import autoservice.ui.menu.factory.DefaultMenuFactory;
 import autoservice.ui.menu.Menu;
 import autoservice.ui.menu.MenuBuilder;
 import autoservice.ui.menu.MenuController;

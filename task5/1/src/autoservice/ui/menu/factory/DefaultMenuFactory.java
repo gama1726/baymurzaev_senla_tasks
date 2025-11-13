@@ -1,6 +1,4 @@
-package autoservice.ui.menu;
-
-import autoservice.ui.menu.factory.MenuFactory;
+package autoservice.ui.menu.factory;
 
 import autoservice.service.ServiceManager;
 import autoservice.ui.menu.*;
