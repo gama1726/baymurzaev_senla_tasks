@@ -2,7 +2,6 @@ package autoservice.ui.menu;
 
 import autoservice.model.*;
 import autoservice.service.ServiceManager;
-
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Scanner;
@@ -15,8 +14,9 @@ public class CreatedOrderAction implements IAction{
     public CreatedOrderAction(ServiceManager serviceManager) {
         this.serviceManager = serviceManager;
     }
-private LocalDateTime realDateTimeOrNow(Scanner scanner,String promt){
-        System.out.print(promt + "(Формат yyyy-MM-ddTHH:mm, Enter = сейчас): ");
+
+    private LocalDateTime realDateTimeOrNow(Scanner scanner, String prompt){
+        System.out.print(prompt + "(Формат yyyy-MM-ddTHH:mm, Enter = сейчас): ");
         String s = scanner.nextLine().trim();
         //Пустая строка - берем текущее время
         if(s.isEmpty()) {
@@ -62,13 +62,13 @@ private LocalDateTime realDateTimeOrNow(Scanner scanner,String promt){
                 return;
             }
 
-            ServiceOrder order = new ServiceOrder(
-                    orderId,
-                    optMechanic.get(),
-                    optSlot.get(),
-                    new TimeSlot(start, end),
-                    price
-            );
+            ServiceOrder order = new ServiceOrder.Builder()
+                    .setId(orderId)
+                    .setMechanic(optMechanic.get())
+                    .setGarageSlot(optSlot.get())
+                    .setTimeSlot(new TimeSlot(start, end))
+                    .setPrice(price)
+                    .build();
 
             serviceManager.addOrder(order);
             System.out.println("Заказ создан: " + order);

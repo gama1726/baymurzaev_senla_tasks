@@ -6,16 +6,16 @@ import java.time.LocalDateTime;
  */
 public class ServiceOrder {
     private int id;
-    public Mechanic mechanic;
-    public GarageSlot garageSlot;
-    public TimeSlot timeSlot;
-    OrderStatus status;
+    private Mechanic mechanic;
+    private GarageSlot garageSlot;
+    private TimeSlot timeSlot;
+    private OrderStatus status;
 
     private int price;
     private LocalDateTime submittedAt;
     private LocalDateTime finishedAt;
 
-    public ServiceOrder(int id,Mechanic mechanic,GarageSlot garageSlot,TimeSlot timeSlot,int price){
+    ServiceOrder(int id, Mechanic mechanic, GarageSlot garageSlot, TimeSlot timeSlot, int price){
         this.id = id;
         this.mechanic = mechanic;
         this.garageSlot = garageSlot;
@@ -24,6 +24,49 @@ public class ServiceOrder {
         this.status = OrderStatus.NEW;
         this.submittedAt = LocalDateTime.now();
         garageSlot.occupy();
+    }
+
+    /**
+     * Builder для создания объектов ServiceOrder.
+     */
+    public static class Builder {
+        private int id;
+        private Mechanic mechanic;
+        private GarageSlot garageSlot;
+        private TimeSlot timeSlot;
+        private int price;
+
+        public Builder setId(int id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder setMechanic(Mechanic mechanic) {
+            this.mechanic = mechanic;
+            return this;
+        }
+
+        public Builder setGarageSlot(GarageSlot garageSlot) {
+            this.garageSlot = garageSlot;
+            return this;
+        }
+
+        public Builder setTimeSlot(TimeSlot timeSlot) {
+            this.timeSlot = timeSlot;
+            return this;
+        }
+
+        public Builder setPrice(int price) {
+            this.price = price;
+            return this;
+        }
+
+        public ServiceOrder build() {
+            if (mechanic == null || garageSlot == null || timeSlot == null) {
+                throw new IllegalStateException("Mechanic, GarageSlot и TimeSlot обязательны для создания заказа");
+            }
+            return new ServiceOrder(id, mechanic, garageSlot, timeSlot, price);
+        }
     }
     public GarageSlot getGarageSlot(){
         return garageSlot;
@@ -64,18 +107,18 @@ public class ServiceOrder {
     public void cancel(){
         this.status = OrderStatus.CANCELED;
         garageSlot.unOccupy();
-    };
+    }
     /** Закрыть заказ (выполнен). */
     public void close(){
         this.status = OrderStatus.CLOSED;
         this.finishedAt = LocalDateTime.now();
         garageSlot.unOccupy();
-    };
+    }
 
     /** Сместить временной слот заказа. */
     public void shift(int minutes){
         this.timeSlot.shiftBy(minutes);
-    };
+    }
 
     @Override
     public String toString(){
@@ -84,6 +127,19 @@ public class ServiceOrder {
        +"| Время: " + timeSlot
        +"| Цена: " + price
        +"| Статус: " + status;
+    }
+
+    @Override
+    public boolean equals(Object o){
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ServiceOrder that = (ServiceOrder) o;
+        return id == that.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
     }
 }
 

@@ -1,45 +1,56 @@
 package autoservice.ui.menu;
 
+import autoservice.ui.menu.factory.AbstractMenuFactory;
 
-
-import autoservice.ui.menu.factory.MenuFactory;
 /**
  * Строит структуру меню для консольного UI.
+ * Использует Abstract Factory для создания семейств пунктов меню.
  */
-
 public class MenuBuilder {
-    private final MenuFactory factory;
+    private final AbstractMenuFactory abstractFactory;
 
-    public MenuBuilder(MenuFactory factory) {
-        this.factory = factory;
+    public MenuBuilder(AbstractMenuFactory abstractFactory) {
+        this.abstractFactory = abstractFactory;
     }
+
     /**
      * Строит и возвращает корневое (главное) меню.
      */
     public Menu buildRootMenu(){
         Menu root = new Menu("Главное меню автосервиса Альянс");
-        root.addItem(factory.createListOrdersItem());
-        root.addItem(factory.createListCurrentOrdersItem());
-        root.addItem(factory.createCreateOrderItem());
-        root.addItem(factory.createCloseOrderItem());
-        root.addItem(factory.createCancelOrderItem());
-        root.addItem(factory.createDeleteOrderItem());
-        root.addItem(factory.createShiftOrderItem());
-        root.addItem(factory.createOrderByMechanicNowItem());
-        root.addItem(factory.createMechanicByOrderItem());
-        root.addItem(factory.createOrdersByPeriodItem());
 
-        root.addItem(factory.createListMechanicsItem());
-        root.addItem(factory.createAddMechanicItem());
-        root.addItem(factory.createRemoveMechanicItem());
+        // Создаем семейства фабрик через Abstract Factory
+        var orderFactory = abstractFactory.createOrderMenuFactory();
+        var mechanicFactory = abstractFactory.createMechanicMenuFactory();
+        var garageSlotFactory = abstractFactory.createGarageSlotMenuFactory();
+        var capacityFactory = abstractFactory.createCapacityMenuFactory();
 
-        root.addItem(factory.createListGarageSlotsItem());
-        root.addItem(factory.createListFreeGarageSlotsNowItem());
-        root.addItem(factory.createAddGarageSlotItem());
-        root.addItem(factory.createRemoveGarageSlotItem());
+        // Добавляем пункты меню заказов
+        root.addItem(orderFactory.createListOrdersItem());
+        root.addItem(orderFactory.createListCurrentOrdersItem());
+        root.addItem(orderFactory.createCreateOrderItem());
+        root.addItem(orderFactory.createCloseOrderItem());
+        root.addItem(orderFactory.createCancelOrderItem());
+        root.addItem(orderFactory.createDeleteOrderItem());
+        root.addItem(orderFactory.createShiftOrderItem());
+        root.addItem(orderFactory.createOrderByMechanicNowItem());
+        root.addItem(orderFactory.createMechanicByOrderItem());
+        root.addItem(orderFactory.createOrdersByPeriodItem());
 
-        root.addItem(factory.createFreeCapacityAtItem());
-        root.addItem(factory.createNextFreeDateItem());
+        // Добавляем пункты меню механиков
+        root.addItem(mechanicFactory.createListMechanicsItem());
+        root.addItem(mechanicFactory.createAddMechanicItem());
+        root.addItem(mechanicFactory.createRemoveMechanicItem());
+
+        // Добавляем пункты меню гаражных мест
+        root.addItem(garageSlotFactory.createListGarageSlotsItem());
+        root.addItem(garageSlotFactory.createListFreeGarageSlotsNowItem());
+        root.addItem(garageSlotFactory.createAddGarageSlotItem());
+        root.addItem(garageSlotFactory.createRemoveGarageSlotItem());
+
+        // Добавляем пункты меню расчета емкости
+        root.addItem(capacityFactory.createFreeCapacityAtItem());
+        root.addItem(capacityFactory.createNextFreeDateItem());
 
         return root;
     }

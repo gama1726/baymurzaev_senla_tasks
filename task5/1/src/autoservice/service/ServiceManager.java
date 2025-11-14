@@ -1,14 +1,12 @@
 package autoservice.service;
 
 import autoservice.model.*;
-
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
- * Менеджер управления автосервисом (Singleton).
- * Хранит механиков, гаражные места и заказы, выдает операции и выборки по тегам.
+ * Главный сервис для управления автосервисом (Singleton).
+ * Делегирует вызовы специализированным сервисам.
  */
 public class ServiceManager {
     // ----- Singleton -----
@@ -16,245 +14,123 @@ public class ServiceManager {
     public static ServiceManager getInstance(){
         return INSTANCE;
     }
-    // ----- Данные модели -----
-    private List<Mechanic> mechanics = new ArrayList<>();
-    private List<GarageSlot> garageSlots = new ArrayList<>();
-    private List<TimeSlot> timeSlots = new ArrayList<>();
-    private List<ServiceOrder> orders = new ArrayList<>();
+    
+    // ----- Специализированные сервисы -----
+    private final OrderService orderService;
+    private final MechanicService mechanicService;
+    private final GarageSlotService garageSlotService;
+    private final CapacityService capacityService;
 
     private ServiceManager(){
-
+        // Инициализация сервисов
+        this.orderService = new OrderService();
+        this.mechanicService = new MechanicService(orderService);
+        this.garageSlotService = new GarageSlotService(orderService);
+        this.capacityService = new CapacityService(mechanicService, garageSlotService, orderService);
     }
-    //Добавление и удаление
-
-     // ----- Механики -----
-    //добавить механика
+    // ----- Механики -----
     public void addMechanic(Mechanic mechanic){
-        mechanics.add(mechanic);
-        System.out.println("Добавлен " + mechanic);
+        mechanicService.addMechanic(mechanic);
     }
-    //удалить механика
+    
     public boolean removeMechanicById(int id){
-        boolean removed = mechanics.removeIf(m -> m.getId() == id);
-
-        if (removed) {
-            System.out.println("Удалён механик № " + id);
-        } else {
-            System.out.println("Механик № " + id + " не найден.");
-        }
-        return removed;
+        return mechanicService.removeMechanicById(id);
     }
-    //ищет механика по id
+    
     public Optional<Mechanic> findMechanicById(int id){
-        return mechanics.stream()
-        .filter(m -> m.getId() == id)
-        .findFirst();
+        return mechanicService.findMechanicById(id);
+    }
+    
+    public List<Mechanic> getMechanicSorted(MechanicSort sort) {
+        return mechanicService.getMechanicSorted(sort);
     }
     // ----- Гаражи -----
-    //добавить место в гараже
     public void addGarageSlot(GarageSlot slot){
-        garageSlots.add(slot);
-        System.out.println("Добавлено место " + slot);
+        garageSlotService.addGarageSlot(slot);
     }
-    //удалить место в гараже
+    
     public boolean removeGarageSlotById(int id){
-        boolean removed = garageSlots.removeIf(s -> s.getId() == id);
-        if (removed) {
-            System.out.println("Удалено место № " + id);
-        } else {
-            System.out.println("Место № " + id + " не найдено.");
-        }
-        return removed;
+        return garageSlotService.removeGarageSlotById(id);
     }
+    
     public Optional<GarageSlot> findGarageSlotById(int id){
-        return garageSlots.stream()
-                .filter(m -> m.getId() == id)
-                .findFirst();
+        return garageSlotService.findGarageSlotById(id);
     }
+    
     public List<GarageSlot> getGarageSlots(){
-        return Collections.unmodifiableList(garageSlots);
+        return garageSlotService.getGarageSlots();
+    }
+    
+    public List<GarageSlot> getFreeGarageSlotsNow(){
+        return garageSlotService.getFreeGarageSlotsNow();
+    }
+    
+    public List<GarageSlot> getFreeGarageSlotsAt(LocalDateTime when){
+        return garageSlotService.getFreeGarageSlotsAt(when);
     }
     // ----- Заказы -----
-    //добавить заказ
     public void addOrder(ServiceOrder order){
-        orders.add(order);
-        System.out.println("Добавлен заказ:\n" + order);
+        orderService.addOrder(order);
     }
+    
     public Optional<ServiceOrder> findOrderById(int id){
-        return orders.stream()
-                .filter(o -> o.getId() == id)
-                .findFirst();
+        return orderService.findOrderById(id);
     }
-    //отменить заказ
-    public boolean  cancelOrder(int orderId){
-        return findOrderById(orderId)
-                .map(o -> {o.close(); return true; })
-                .orElse(false);
+    
+    public boolean cancelOrder(int orderId){
+        return orderService.cancelOrder(orderId);
     }
-    //закрытие заказа
-    public boolean  closeOrder(int orderId){
-        return findOrderById(orderId)
-                .map(o -> {o.close(); return true; })
-                .orElse(false);
+    
+    public boolean closeOrder(int orderId){
+        return orderService.closeOrder(orderId);
     }
 
-    //удаление заказа
-        public boolean deleteOrder(int orderId){
-           return findOrderById(orderId)
-                .map(o -> {o.close(); return true; })
-                .orElse(false);
+    public boolean deleteOrder(int orderId){
+        return orderService.deleteOrder(orderId);
     }
-    //Смещение заказа
-    public boolean  shiftOrder(int orderId,int minutes){
-        System.out.println("Cмещаем все заказы на " + minutes + "минут");
-           return findOrderById(orderId)
-                .map(o -> {o.close(); return true; })
-                .orElse(false);
-
+    
+    public boolean shiftOrder(int orderId, int minutes){
+        return orderService.shiftOrder(orderId, minutes);
     }
+    
     public List<ServiceOrder> getOrders(){
-        return Collections.unmodifiableList(orders);
+        return orderService.getOrders();
     }
-
-//вспомогательное
-//проверяем,активен ли заказ в данный момент
-private boolean isActive(ServiceOrder o, LocalDateTime when){
-        return o.getStatus() == OrderStatus.NEW && o.getTimeSlot().contains(when);
+    
+    public List<ServiceOrder> getAllOrdersSorted(OrderSort sort){
+        return orderService.getAllOrdersSorted(sort);
     }
-    //Возвращает компаратор для сортировки заказов
-    private Comparator<ServiceOrder> orderComporator(OrderSort sort){
-        switch (sort) {
-            case BY_SUBMIT_DATE:
-                return Comparator.comparing(ServiceOrder::getSubmittedAt);
-            case BY_PLANNED_START:
-                return Comparator.comparing(o -> o.getTimeSlot().getStart());
-            case BY_FINISH_DATE:
-                return Comparator.comparing(o -> {
-                    LocalDateTime f = o.getFinishedAt();
-                    return f == null ? LocalDateTime.MAX :f;
-                });
-            case BY_PRICE:
-                return Comparator.comparingInt(ServiceOrder::getPrice);
-            default:
-                return Comparator.comparingInt(ServiceOrder::getId);
-        }
-    }
-    // ----- Выборки / отчёты -----
-//Гаражи
-
-    //Заказы
-    /** Все заказы, отсортированные по заданному критерию. */
-     public List<ServiceOrder> getAllOrdersSorted(OrderSort sort){
-            return orders.stream()
-                    .sorted(orderComporator(sort))
-                    .collect(Collectors.toList());
-    }
-    /** Текущие выполняемые заказы. */
+    
     public List<ServiceOrder> getCurrentOrderSorted(OrderSort sort){
-        LocalDateTime now = LocalDateTime.now(); 
-        return orders.stream()
-                .filter(o -> isActive(o, now))
-                .sorted(orderComporator(sort))
-                .collect(Collectors.toList());
-
+        return orderService.getCurrentOrderSorted(sort);
     }
-    /** Заказ, выполняемый механиком прямо сейчас. */
+    
     public Optional<ServiceOrder> getOrderByMechanicNow(int mechanicId){
-        LocalDateTime now = LocalDateTime.now();
-        return orders.stream()
-                .filter(o -> o.getStatus() == OrderStatus.NEW)
-                .filter(o ->o.getMechanic().getId() == mechanicId)
-                .filter(o -> o.getTimeSlot().contains(now))
-                .findFirst();
+        return orderService.getOrderByMechanicNow(mechanicId);
     }
-    /** Механик, выполняющий конкретный заказ. */
-    public Optional <Mechanic> getMechanicByOrderId(int orderId){
-        return findOrderById(orderId)
-                .map(ServiceOrder::getMechanic);
+    
+    public Optional<Mechanic> getMechanicByOrderId(int orderId){
+        return orderService.getMechanicByOrderId(orderId);
     }
-    /** Заказы за период с фильтром по статусу и сортировкой. */
-    public List<ServiceOrder> getOrders(LocalDateTime from,LocalDateTime to,Set<OrderStatus> statuses,OrderSort sort){
-        return orders.stream()
-                .filter(o -> statuses == null || statuses.contains(o.getStatus()))
-                .filter(o -> {
-                    if(from == null && to == null) return true;
-                    return o.getTimeSlot().getStart().isBefore(to)
-                            && o.getTimeSlot().getEnd().isAfter(from);
-                })
-                .sorted(orderComporator(sort))
-                .collect(Collectors.toList());
+    
+    public List<ServiceOrder> getOrders(LocalDateTime from, LocalDateTime to, Set<OrderStatus> statuses, OrderSort sort){
+        return orderService.getOrders(from, to, statuses, sort);
     }
-    //Механики
-    /** Список механиков по имени или занятости. */
-    public List<Mechanic> getMechanicSorted(MechanicSort sort) {
-        if (sort == MechanicSort.BY_NAME) {
-            return mechanics.stream()
-                    .sorted(Comparator.comparing(Mechanic::getName))
-                    .collect(Collectors.toList());
-        } else {
-            LocalDateTime now = LocalDateTime.now();
-            return mechanics.stream()
-                    .sorted(Comparator.comparing(Mechanic::getName))
-                    .collect(Collectors.toList());
-        }
+    
+    public void printList(String title, List<?> list){
+        orderService.printList(title, list);
     }
-    //Подсчёт текущей занятости механика
-    private int currentWorkload(Mechanic m,LocalDateTime when){
-        return(int) orders.stream()
-                .filter(o -> o.getStatus() == OrderStatus.NEW)
-                .filter(o -> o.getMechanic().getId() == m.getId())
-                .filter(o -> o.getTimeSlot().contains(when))
-                .count();
+    
+    public void demoPeriodReport(LocalDateTime from, LocalDateTime to){
+        orderService.demoPeriodReport(from, to);
     }
-    /** Свободные места сейчас. */
-    public List<GarageSlot> getFreeGarageSlotsNow(){
-        return getFreeGarageSlotsAt(LocalDateTime.now());
-    }
-    /** Свободные места на момент времени. */
-    public List <GarageSlot> getFreeGarageSlotsAt(LocalDateTime when){
-        List <GarageSlot> free = new ArrayList<>(garageSlots);
-        orders.stream()
-                .filter(o -> o.getStatus() == OrderStatus.NEW)
-                .filter(o -> o.getTimeSlot().contains(when))
-                .map(ServiceOrder::getGarageSlot)
-                .forEach(free::remove);
-        return free;
-    }
-    /** Кол-во свободных мест на момент (минимум между механиками и местами). */
+
+    // ----- Слоты и свободные даты -----
     public int freeCapacityAt(LocalDateTime when){
-        int freeMechanics = (int) mechanics.stream()
-                .filter(m -> currentWorkload(m,when) == 0)
-                .count();
-        int freeGarages = getFreeGarageSlotsAt(when).size();
-        return Math.min(freeMechanics,freeGarages);
+        return capacityService.freeCapacityAt(when);
     }
-    /** Поиск ближайшей свободной даты (шаг 15 минут, до 30 дней). */
+    
     public LocalDateTime findNextFreeDate(LocalDateTime from){
-        LocalDateTime t = from;
-        for(int i = 0; i < 96 * 30; i++){//Перебираем 96 * 30 = 2880 шагов, по 15 минут каждый.
-    // Это примерно 30 суток (96 интервалов по 15 минут в сутках).
-            if(freeCapacityAt(t) > 0){
-                return t;
-            }
-            t = t.plusMinutes(15);
-        }
-        return null;
-    }
-    // Выводит заголовок и список в консоль.
-    public void printList(String title,List<?> list){
-        System.out.println("\n" + title + ":");
-        if(list.isEmpty()){
-            System.out.println("пусто");
-        } else {
-            for (Object o : list){
-                System.out.println(o);
-            }
-        }
-    }
-    //Печатает отчёт по заказам за период
-    public void demoPeriodReport(LocalDateTime from,LocalDateTime to){
-        Set<OrderStatus> st = EnumSet.of(OrderStatus.NEW, OrderStatus.CLOSED, OrderStatus.CANCELED, OrderStatus.DELETED);
-        List<ServiceOrder> list = getOrders(from,to,st,OrderSort.BY_PLANNED_START);
-        printList("Отчет по заказам [" + from + ".." + to + "]",list);
+        return capacityService.findNextFreeDate(from);
     }
 }

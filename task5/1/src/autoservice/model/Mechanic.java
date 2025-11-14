@@ -30,5 +30,8 @@ public class Mechanic{
         Mechanic m = (Mechanic) o;
         return id == m.id;//Приводим тип и сравниваем логический идентификатор
 }
-    
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
+    }
 }

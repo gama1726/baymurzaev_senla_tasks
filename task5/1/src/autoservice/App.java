@@ -3,6 +3,7 @@ package autoservice;
 import autoservice.model.GarageSlot;
 import autoservice.model.Mechanic;
 import autoservice.service.ServiceManager;
+import autoservice.ui.menu.factory.AbstractMenuFactory;
 import autoservice.ui.menu.factory.DefaultMenuFactory;
 import autoservice.ui.menu.Menu;
 import autoservice.ui.menu.MenuBuilder;
@@ -35,10 +36,10 @@ public class App {
         manager.addGarageSlot(new GarageSlot(103));
 
         // Abstract Factory для пунктов меню
-        MenuFactory factory = new DefaultMenuFactory(manager);
+        AbstractMenuFactory abstractFactory = new DefaultMenuFactory(manager);
 
         // Builder, который с помощью фабрики собирает структуру меню
-        MenuBuilder builder = new MenuBuilder(factory);
+        MenuBuilder builder = new MenuBuilder(abstractFactory);
         Menu rootMenu = builder.buildRootMenu();
 
         // Контроллер UI (MVC) + главный цикл консольного меню
