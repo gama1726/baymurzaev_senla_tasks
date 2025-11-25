@@ -1,0 +1,41 @@
+package autoservice.model;
+
+import java.io.Serializable;
+
+/**
+ * Автомеханик.
+ */
+public class Mechanic implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private int id;
+    private String name;
+
+    public Mechanic(int id,String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    
+    public int getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+    @Override
+    public String toString(){
+        return "Id мастера : " + getId() + ",Имя: " + getName();
+    }
+    @Override
+    public boolean equals(Object o){
+        if (this == o) return true;
+        if (!(o instanceof Mechanic)) return false;
+        Mechanic m = (Mechanic) o;
+        return id == m.id;//Приводим тип и сравниваем логический идентификатор
+}
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
+    }
+}
