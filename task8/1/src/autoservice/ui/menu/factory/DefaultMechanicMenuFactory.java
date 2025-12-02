@@ -1,5 +1,6 @@
 package autoservice.ui.menu.factory;
 
+import autoservice.injection.DIContainer;
 import autoservice.service.ServiceManager;
 import autoservice.ui.menu.*;
 
@@ -8,9 +9,11 @@ import autoservice.ui.menu.*;
  */
 public class DefaultMechanicMenuFactory implements MechanicMenuFactory {
     private final ServiceManager serviceManager;
+    private final DIContainer container;
 
-    public DefaultMechanicMenuFactory(ServiceManager serviceManager) {
+    public DefaultMechanicMenuFactory(ServiceManager serviceManager, DIContainer container) {
         this.serviceManager = serviceManager;
+        this.container = container;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package autoservice.ui.menu.factory;
 
+import autoservice.injection.DIContainer;
 import autoservice.service.ServiceManager;
 import autoservice.ui.menu.*;
 
@@ -8,9 +9,15 @@ import autoservice.ui.menu.*;
  */
 public class DefaultOrderMenuFactory implements OrderMenuFactory {
     private final ServiceManager serviceManager;
+    private final DIContainer container;
 
-    public DefaultOrderMenuFactory(ServiceManager serviceManager) {
+    public DefaultOrderMenuFactory(ServiceManager serviceManager, DIContainer container) {
         this.serviceManager = serviceManager;
+        this.container = container;
+    }
+    
+    private void injectDependencies(Object action) {
+        container.injectDependencies(action);
     }
 
     @Override
@@ -45,14 +52,16 @@ public class DefaultOrderMenuFactory implements OrderMenuFactory {
 
     @Override
     public MenuItem createDeleteOrderItem() {
-        return new MenuItem("Удалить заказ",
-                new DeleteOrderAction(serviceManager), null);
+        DeleteOrderAction action = new DeleteOrderAction(serviceManager);
+        injectDependencies(action);
+        return new MenuItem("Удалить заказ", action, null);
     }
 
     @Override
     public MenuItem createShiftOrderItem() {
-        return new MenuItem("Сместить время заказа",
-                new ShiftOrderAction(serviceManager), null);
+        ShiftOrderAction action = new ShiftOrderAction(serviceManager);
+        injectDependencies(action);
+        return new MenuItem("Сместить время заказа", action, null);
     }
 
     @Override

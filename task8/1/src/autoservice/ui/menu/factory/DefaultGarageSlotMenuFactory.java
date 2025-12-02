@@ -1,5 +1,6 @@
 package autoservice.ui.menu.factory;
 
+import autoservice.injection.DIContainer;
 import autoservice.service.ServiceManager;
 import autoservice.ui.menu.*;
 
@@ -8,9 +9,15 @@ import autoservice.ui.menu.*;
  */
 public class DefaultGarageSlotMenuFactory implements GarageSlotMenuFactory {
     private final ServiceManager serviceManager;
+    private final DIContainer container;
 
-    public DefaultGarageSlotMenuFactory(ServiceManager serviceManager) {
+    public DefaultGarageSlotMenuFactory(ServiceManager serviceManager, DIContainer container) {
         this.serviceManager = serviceManager;
+        this.container = container;
+    }
+    
+    private void injectDependencies(Object action) {
+        container.injectDependencies(action);
     }
 
     @Override
@@ -27,14 +34,16 @@ public class DefaultGarageSlotMenuFactory implements GarageSlotMenuFactory {
 
     @Override
     public MenuItem createAddGarageSlotItem() {
-        return new MenuItem("Добавить гаражное место",
-                new AddGarageSlotAction(serviceManager), null);
+        AddGarageSlotAction action = new AddGarageSlotAction(serviceManager);
+        injectDependencies(action);
+        return new MenuItem("Добавить гаражное место", action, null);
     }
 
     @Override
     public MenuItem createRemoveGarageSlotItem() {
-        return new MenuItem("Удалить гаражное место",
-                new RemoveGarageSlotAction(serviceManager), null);
+        RemoveGarageSlotAction action = new RemoveGarageSlotAction(serviceManager);
+        injectDependencies(action);
+        return new MenuItem("Удалить гаражное место", action, null);
     }
 
     @Override
