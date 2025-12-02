@@ -1,48 +1,46 @@
 package autoservice.service;
 
+import autoservice.annotation.Component;
+import autoservice.annotation.Inject;
+import autoservice.exception.AutoserviceException;
 import autoservice.exception.EntityNotFoundException;
 import autoservice.exception.ImportExportException;
 import autoservice.model.*;
 import autoservice.service.importexport.GarageSlotImportExportService;
 import autoservice.service.importexport.MechanicImportExportService;
 import autoservice.service.importexport.OrderImportExportService;
+
 import java.time.LocalDateTime;
 import java.util.*;
 
 /**
- * Главный сервис для управления автосервисом (Singleton).
+ * Главный сервис для управления автосервисом (Singleton через DI).
  * Делегирует вызовы специализированным сервисам.
  */
+@Component
 public class ServiceManager {
-    // ----- Singleton -----
-    private static final ServiceManager INSTANCE = new ServiceManager();
-    public static ServiceManager getInstance(){
-        return INSTANCE;
-    }
-    
     // ----- Специализированные сервисы -----
-    private final OrderService orderService;
-    private final MechanicService mechanicService;
-    private final GarageSlotService garageSlotService;
-    private final CapacityService capacityService;
+    @Inject
+    private OrderService orderService;
+    
+    @Inject
+    private MechanicService mechanicService;
+    
+    @Inject
+    private GarageSlotService garageSlotService;
+    
+    @Inject
+    private CapacityService capacityService;
     
     // ----- Сервисы импорта/экспорта -----
-    private final MechanicImportExportService mechanicImportExportService;
-    private final GarageSlotImportExportService garageSlotImportExportService;
-    private final OrderImportExportService orderImportExportService;
-
-    private ServiceManager(){
-        // Инициализация сервисов
-        this.orderService = new OrderService();
-        this.mechanicService = new MechanicService(orderService);
-        this.garageSlotService = new GarageSlotService(orderService);
-        this.capacityService = new CapacityService(mechanicService, garageSlotService, orderService);
-        
-        // Инициализация сервисов импорта/экспорта
-        this.mechanicImportExportService = new MechanicImportExportService(mechanicService);
-        this.garageSlotImportExportService = new GarageSlotImportExportService(garageSlotService);
-        this.orderImportExportService = new OrderImportExportService(orderService, mechanicService, garageSlotService);
-    }
+    @Inject
+    private MechanicImportExportService mechanicImportExportService;
+    
+    @Inject
+    private GarageSlotImportExportService garageSlotImportExportService;
+    
+    @Inject
+    private OrderImportExportService orderImportExportService;
     // ----- Механики -----
     public void addMechanic(Mechanic mechanic){
         mechanicService.addMechanic(mechanic);
@@ -197,75 +195,5 @@ public class ServiceManager {
     
     public List<Mechanic> getAllMechanics() {
         return mechanicService.getAllMechanics();
-    }
-    
-    // ----- Состояние приложения -----
-    
-    /**
-     * Получает текущее состояние приложения для сериализации.
-     */
-    public autoservice.persistence.ApplicationState getApplicationState() {
-        return new autoservice.persistence.ApplicationState(
-            mechanicService.getAllMechanics(),
-            garageSlotService.getGarageSlots(),
-            orderService.getOrders()
-        );
-    }
-    
-    /**
-     * Восстанавливает состояние приложения из сохраненных данных.
-     * Очищает текущие данные и загружает сохраненные.
-     */
-    public void restoreApplicationState(autoservice.persistence.ApplicationState state) {
-        if (state == null) {
-            return;
-        }
-        
-        // Очищаем текущие данные
-        clearAllData();
-        
-        // Восстанавливаем механиков
-        for (Mechanic mechanic : state.getMechanics()) {
-            mechanicService.addMechanicSilently(mechanic);
-        }
-        
-        // Восстанавливаем гаражные места
-        for (GarageSlot slot : state.getGarageSlots()) {
-            garageSlotService.addGarageSlotSilently(slot);
-        }
-        
-        // Восстанавливаем заказы
-        for (ServiceOrder order : state.getOrders()) {
-            orderService.addOrderSilently(order);
-        }
-        
-        System.out.println("Восстановлено: " + state.getMechanics().size() + " механиков, " +
-                          state.getGarageSlots().size() + " гаражных мест, " +
-                          state.getOrders().size() + " заказов");
-    }
-    
-    /**
-     * Очищает все данные приложения (тихо, без сообщений).
-     */
-    private void clearAllData() {
-        // Получаем копии списков для безопасного удаления
-        List<ServiceOrder> ordersCopy = new ArrayList<>(orderService.getOrders());
-        List<Mechanic> mechanicsCopy = new ArrayList<>(mechanicService.getAllMechanics());
-        List<GarageSlot> slotsCopy = new ArrayList<>(garageSlotService.getGarageSlots());
-        
-        // Очищаем заказы (они зависят от механиков и гаражей)
-        for (ServiceOrder order : ordersCopy) {
-            orderService.removeOrderById(order.getId());
-        }
-        
-        // Очищаем механиков
-        for (Mechanic mechanic : mechanicsCopy) {
-            mechanicService.removeMechanicById(mechanic.getId());
-        }
-        
-        // Очищаем гаражные места
-        for (GarageSlot slot : slotsCopy) {
-            garageSlotService.removeGarageSlotById(slot.getId());
-        }
     }
 }

@@ -1,5 +1,7 @@
 package autoservice.service.importexport;
 
+import autoservice.annotation.Component;
+import autoservice.annotation.Inject;
 import autoservice.exception.ImportExportException;
 import autoservice.model.GarageSlot;
 import autoservice.service.GarageSlotService;
@@ -16,15 +18,13 @@ import java.util.Optional;
 /**
  * Сервис для импорта и экспорта гаражных мест в формате CSV.
  */
+@Component
 public class GarageSlotImportExportService {
     private static final String CSV_HEADER = "id";
     private static final String CSV_SEPARATOR = ",";
 
-    private final GarageSlotService garageSlotService;
-
-    public GarageSlotImportExportService(GarageSlotService garageSlotService) {
-        this.garageSlotService = garageSlotService;
-    }
+    @Inject
+    private GarageSlotService garageSlotService;
 
     /**
      * Экспортирует все гаражные места в CSV файл.
@@ -143,6 +143,4 @@ public class GarageSlotImportExportService {
         }
     }
 }
-
-
 

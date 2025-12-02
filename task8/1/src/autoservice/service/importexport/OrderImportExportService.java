@@ -1,5 +1,7 @@
 package autoservice.service.importexport;
 
+import autoservice.annotation.Component;
+import autoservice.annotation.Inject;
 import autoservice.exception.EntityNotFoundException;
 import autoservice.exception.ImportExportException;
 import autoservice.model.*;
@@ -23,20 +25,20 @@ import java.util.Optional;
  * Сервис для импорта и экспорта заказов в формате CSV.
  * Автоматически устанавливает связи между объектами (механик, гаражное место).
  */
+@Component
 public class OrderImportExportService {
     private static final String CSV_HEADER = "id,mechanicId,garageSlotId,timeSlotStart,timeSlotEnd,price,status,submittedAt,finishedAt";
     private static final String CSV_SEPARATOR = ",";
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
-    private final OrderService orderService;
-    private final MechanicService mechanicService;
-    private final GarageSlotService garageSlotService;
-
-    public OrderImportExportService(OrderService orderService, MechanicService mechanicService, GarageSlotService garageSlotService) {
-        this.orderService = orderService;
-        this.mechanicService = mechanicService;
-        this.garageSlotService = garageSlotService;
-    }
+    @Inject
+    private OrderService orderService;
+    
+    @Inject
+    private MechanicService mechanicService;
+    
+    @Inject
+    private GarageSlotService garageSlotService;
 
     /**
      * Экспортирует все заказы в CSV файл.

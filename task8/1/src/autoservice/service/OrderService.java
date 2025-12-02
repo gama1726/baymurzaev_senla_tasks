@@ -1,5 +1,6 @@
 package autoservice.service;
 
+import autoservice.annotation.Component;
 import autoservice.model.*;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -8,6 +9,7 @@ import java.util.stream.Collectors;
 /**
  * Сервис для управления заказами.
  */
+@Component
 public class OrderService {
     private final List<ServiceOrder> orders = new ArrayList<>();
 
@@ -17,13 +19,6 @@ public class OrderService {
     public void addOrder(ServiceOrder order) {
         orders.add(order);
         System.out.println("Добавлен заказ:\n" + order);
-    }
-    
-    /**
-     * Добавить заказ без вывода сообщения (для восстановления состояния).
-     */
-    public void addOrderSilently(ServiceOrder order) {
-        orders.add(order);
     }
 
     /**

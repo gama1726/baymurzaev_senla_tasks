@@ -1,5 +1,7 @@
 package autoservice.service;
 
+import autoservice.annotation.Component;
+import autoservice.annotation.Inject;
 import autoservice.model.Mechanic;
 import autoservice.model.MechanicSort;
 import autoservice.model.OrderStatus;
@@ -12,13 +14,12 @@ import java.util.stream.Collectors;
 /**
  * Сервис для управления механиками.
  */
+@Component
 public class MechanicService {
     private final List<Mechanic> mechanics = new ArrayList<>();
-    private final OrderService orderService;
-
-    public MechanicService(OrderService orderService) {
-        this.orderService = orderService;
-    }
+    
+    @Inject
+    private OrderService orderService;
 
     /**
      * Добавить механика.
@@ -26,13 +27,6 @@ public class MechanicService {
     public void addMechanic(Mechanic mechanic) {
         mechanics.add(mechanic);
         System.out.println("Добавлен " + mechanic);
-    }
-    
-    /**
-     * Добавить механика без вывода сообщения (для восстановления состояния).
-     */
-    public void addMechanicSilently(Mechanic mechanic) {
-        mechanics.add(mechanic);
     }
 
     /**

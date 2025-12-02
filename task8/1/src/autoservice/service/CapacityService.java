@@ -1,20 +1,23 @@
 package autoservice.service;
 
+import autoservice.annotation.Component;
+import autoservice.annotation.Inject;
+
 import java.time.LocalDateTime;
 
 /**
  * Сервис для расчета свободных слотов и поиска свободных дат.
  */
+@Component
 public class CapacityService {
-    private final MechanicService mechanicService;
-    private final GarageSlotService garageSlotService;
-    private final OrderService orderService;
-
-    public CapacityService(MechanicService mechanicService, GarageSlotService garageSlotService, OrderService orderService) {
-        this.mechanicService = mechanicService;
-        this.garageSlotService = garageSlotService;
-        this.orderService = orderService;
-    }
+    @Inject
+    private MechanicService mechanicService;
+    
+    @Inject
+    private GarageSlotService garageSlotService;
+    
+    @Inject
+    private OrderService orderService;
 
     /**
      * Получить количество свободных мест на момент времени (минимум между механиками и местами).

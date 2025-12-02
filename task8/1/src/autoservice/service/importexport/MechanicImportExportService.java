@@ -1,5 +1,7 @@
 package autoservice.service.importexport;
 
+import autoservice.annotation.Component;
+import autoservice.annotation.Inject;
 import autoservice.exception.ImportExportException;
 import autoservice.model.Mechanic;
 import autoservice.service.MechanicService;
@@ -16,15 +18,13 @@ import java.util.Optional;
 /**
  * Сервис для импорта и экспорта механиков в формате CSV.
  */
+@Component
 public class MechanicImportExportService {
     private static final String CSV_HEADER = "id,name";
     private static final String CSV_SEPARATOR = ",";
 
-    private final MechanicService mechanicService;
-
-    public MechanicImportExportService(MechanicService mechanicService) {
-        this.mechanicService = mechanicService;
-    }
+    @Inject
+    private MechanicService mechanicService;
 
     /**
      * Экспортирует всех механиков в CSV файл.
@@ -177,6 +177,4 @@ public class MechanicImportExportService {
         return value;
     }
 }
-
-
 

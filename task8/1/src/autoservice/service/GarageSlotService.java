@@ -1,5 +1,7 @@
 package autoservice.service;
 
+import autoservice.annotation.Component;
+import autoservice.annotation.Inject;
 import autoservice.model.GarageSlot;
 import autoservice.model.OrderStatus;
 import autoservice.model.ServiceOrder;
@@ -11,13 +13,12 @@ import java.util.stream.Collectors;
 /**
  * Сервис для управления гаражными местами.
  */
+@Component
 public class GarageSlotService {
     private final List<GarageSlot> garageSlots = new ArrayList<>();
-    private final OrderService orderService;
-
-    public GarageSlotService(OrderService orderService) {
-        this.orderService = orderService;
-    }
+    
+    @Inject
+    private OrderService orderService;
 
     /**
      * Добавить гаражное место.
@@ -25,13 +26,6 @@ public class GarageSlotService {
     public void addGarageSlot(GarageSlot slot) {
         garageSlots.add(slot);
         System.out.println("Добавлено место " + slot);
-    }
-    
-    /**
-     * Добавить гаражное место без вывода сообщения (для восстановления состояния).
-     */
-    public void addGarageSlotSilently(GarageSlot slot) {
-        garageSlots.add(slot);
     }
 
     /**
