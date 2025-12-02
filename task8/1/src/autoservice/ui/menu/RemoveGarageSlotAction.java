@@ -1,6 +1,7 @@
 package autoservice.ui.menu;
 
-import autoservice.config.ConfigurationManager;
+import autoservice.annotation.Inject;
+import autoservice.config.Configuration;
 import autoservice.service.ServiceManager;
 
 import java.util.Scanner;
@@ -10,17 +11,17 @@ import java.util.Scanner;
  */
 public class RemoveGarageSlotAction implements IAction{
     private final ServiceManager serviceManager;
-    private final ConfigurationManager configManager;
+    
+    @Inject
+    private Configuration configuration;
     
     public RemoveGarageSlotAction(ServiceManager serviceManager) {
         this.serviceManager = serviceManager;
-        this.configManager = ConfigurationManager.getInstance();
     }
-    
     @Override
     public void execute() {
-        if (!configManager.isGarageSlotAddRemoveEnabled()) {
-            System.out.println("Ошибка: добавление/удаление гаражных мест отключено в конфигурации.");
+        if (!configuration.isGarageSlotAddRemoveEnabled()) {
+            System.out.println("Добавление/удаление гаражных мест запрещено в конфигурации.");
             return;
         }
         

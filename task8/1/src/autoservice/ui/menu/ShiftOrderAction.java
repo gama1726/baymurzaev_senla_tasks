@@ -1,6 +1,7 @@
 package autoservice.ui.menu;
 
-import autoservice.config.ConfigurationManager;
+import autoservice.annotation.Inject;
+import autoservice.config.Configuration;
 import autoservice.service.ServiceManager;
 
 import java.util.Scanner;
@@ -10,17 +11,17 @@ import java.util.Scanner;
  */
 public class ShiftOrderAction implements  IAction {
     private final ServiceManager serviceManager;
-    private final ConfigurationManager configManager;
+    
+    @Inject
+    private Configuration configuration;
     
     public ShiftOrderAction(ServiceManager serviceManager) {
         this.serviceManager = serviceManager;
-        this.configManager = ConfigurationManager.getInstance();
     }
-    
     @Override
     public void execute() {
-        if (!configManager.isOrderShiftEnabled()) {
-            System.out.println("Ошибка: смещение времени выполнения заказов отключено в конфигурации.");
+        if (!configuration.isOrderShiftEnabled()) {
+            System.out.println("Смещение времени заказов запрещено в конфигурации.");
             return;
         }
         

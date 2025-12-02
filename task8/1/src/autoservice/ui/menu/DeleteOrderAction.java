@@ -1,6 +1,7 @@
 package autoservice.ui.menu;
 
-import autoservice.config.ConfigurationManager;
+import autoservice.annotation.Inject;
+import autoservice.config.Configuration;
 import autoservice.service.ServiceManager;
 
 import java.util.Scanner;
@@ -10,17 +11,18 @@ import java.util.Scanner;
  */
 public class DeleteOrderAction implements  IAction{
     private final ServiceManager serviceManager;
-    private final ConfigurationManager configManager;
+    
+    @Inject
+    private Configuration configuration;
 
     public DeleteOrderAction(ServiceManager serviceManager) {
         this.serviceManager = serviceManager;
-        this.configManager = ConfigurationManager.getInstance();
     }
 
     @Override
     public void execute() {
-        if (!configManager.isOrderDeleteEnabled()) {
-            System.out.println("Ошибка: удаление заказов отключено в конфигурации.");
+        if (!configuration.isOrderDeleteEnabled()) {
+            System.out.println("Удаление заказов запрещено в конфигурации.");
             return;
         }
         
