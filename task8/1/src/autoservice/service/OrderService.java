@@ -1,7 +1,13 @@
 package autoservice.service;
 
 import autoservice.annotation.Component;
+import autoservice.annotation.Inject;
+import autoservice.dao.ServiceOrderDAO;
+import autoservice.database.ConnectionManager;
 import autoservice.model.*;
+
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -11,73 +17,177 @@ import java.util.stream.Collectors;
  */
 @Component
 public class OrderService {
-    private final List<ServiceOrder> orders = new ArrayList<>();
+    
+    @Inject
+    private ServiceOrderDAO orderDAO;
+    
+    @Inject
+    private GarageSlotService garageSlotService;
+    
+    @Inject
+    private ConnectionManager connectionManager;
 
     /**
      * Добавить заказ.
+     * Транзакция: сохраняет заказ и обновляет статус гаражного места.
      */
     public void addOrder(ServiceOrder order) {
-        orders.add(order);
-        System.out.println("Добавлен заказ:\n" + order);
+        Connection conn = connectionManager.getConnection();
+        try {
+            // Сохраняем заказ
+            orderDAO.save(order);
+            
+            // Обновляем статус гаражного места (занято)
+            garageSlotService.updateGarageSlot(order.getGarageSlot());
+            
+            conn.commit();
+            System.out.println("Добавлен заказ:\n" + order);
+        } catch (SQLException e) {
+            rollback(conn);
+            throw new RuntimeException("Ошибка при добавлении заказа: " + e.getMessage(), e);
+        }
     }
 
     /**
      * Найти заказ по ID.
      */
     public Optional<ServiceOrder> findOrderById(int id) {
-        return orders.stream()
-                .filter(o -> o.getId() == id)
-                .findFirst();
+        try {
+            return orderDAO.findById(id);
+        } catch (SQLException e) {
+            throw new RuntimeException("Ошибка при поиске заказа: " + e.getMessage(), e);
+        }
     }
 
     /**
      * Получить список всех заказов.
      */
     public List<ServiceOrder> getOrders() {
-        return Collections.unmodifiableList(orders);
+        try {
+            return orderDAO.findAll();
+        } catch (SQLException e) {
+            throw new RuntimeException("Ошибка при получении списка заказов: " + e.getMessage(), e);
+        }
     }
 
     /**
      * Отменить заказ.
+     * Транзакция: обновляет статус заказа и освобождает гаражное место.
      */
     public boolean cancelOrder(int orderId) {
-        return findOrderById(orderId)
-                .map(o -> {o.cancel(); return true; })
-                .orElse(false);
+        Connection conn = connectionManager.getConnection();
+        try {
+            Optional<ServiceOrder> orderOpt = orderDAO.findById(orderId);
+            if (orderOpt.isEmpty()) {
+                return false;
+            }
+            
+            ServiceOrder order = orderOpt.get();
+            order.cancel();
+            orderDAO.update(order);
+            
+            // Освобождаем гаражное место
+            garageSlotService.updateGarageSlot(order.getGarageSlot());
+            
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            rollback(conn);
+            throw new RuntimeException("Ошибка при отмене заказа: " + e.getMessage(), e);
+        }
     }
 
     /**
      * Закрыть заказ.
+     * Транзакция: обновляет статус заказа и освобождает гаражное место.
      */
     public boolean closeOrder(int orderId) {
-        return findOrderById(orderId)
-                .map(o -> {o.close(); return true; })
-                .orElse(false);
+        Connection conn = connectionManager.getConnection();
+        try {
+            Optional<ServiceOrder> orderOpt = orderDAO.findById(orderId);
+            if (orderOpt.isEmpty()) {
+                return false;
+            }
+            
+            ServiceOrder order = orderOpt.get();
+            order.close();
+            orderDAO.update(order);
+            
+            // Освобождаем гаражное место
+            garageSlotService.updateGarageSlot(order.getGarageSlot());
+            
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            rollback(conn);
+            throw new RuntimeException("Ошибка при закрытии заказа: " + e.getMessage(), e);
+        }
     }
 
     /**
      * Удалить заказ (пометить как удалённый).
+     * Транзакция: обновляет статус заказа и освобождает гаражное место.
      */
     public boolean deleteOrder(int orderId) {
-        return findOrderById(orderId)
-                .map(o -> {o.markDeleted(); return true; })
-                .orElse(false);
+        Connection conn = connectionManager.getConnection();
+        try {
+            Optional<ServiceOrder> orderOpt = orderDAO.findById(orderId);
+            if (orderOpt.isEmpty()) {
+                return false;
+            }
+            
+            ServiceOrder order = orderOpt.get();
+            order.markDeleted();
+            orderDAO.update(order);
+            
+            // Освобождаем гаражное место
+            garageSlotService.updateGarageSlot(order.getGarageSlot());
+            
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            rollback(conn);
+            throw new RuntimeException("Ошибка при удалении заказа: " + e.getMessage(), e);
+        }
     }
 
     /**
-     * Физически удалить заказ из списка (для импорта).
+     * Физически удалить заказ из БД (для импорта).
      */
     public boolean removeOrderById(int orderId) {
-        return orders.removeIf(o -> o.getId() == orderId);
+        Connection conn = connectionManager.getConnection();
+        try {
+            boolean removed = orderDAO.deleteById(orderId);
+            conn.commit();
+            return removed;
+        } catch (SQLException e) {
+            rollback(conn);
+            throw new RuntimeException("Ошибка при физическом удалении заказа: " + e.getMessage(), e);
+        }
     }
 
     /**
      * Сместить время заказа.
+     * Транзакция: обновляет время заказа в БД.
      */
     public boolean shiftOrder(int orderId, int minutes) {
-        return findOrderById(orderId)
-                .map(o -> {o.shift(minutes); return true; })
-                .orElse(false);
+        Connection conn = connectionManager.getConnection();
+        try {
+            Optional<ServiceOrder> orderOpt = orderDAO.findById(orderId);
+            if (orderOpt.isEmpty()) {
+                return false;
+            }
+            
+            ServiceOrder order = orderOpt.get();
+            order.shift(minutes);
+            orderDAO.update(order);
+            
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            rollback(conn);
+            throw new RuntimeException("Ошибка при смещении времени заказа: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -112,32 +222,47 @@ public class OrderService {
      * Получить все заказы, отсортированные по заданному критерию.
      */
     public List<ServiceOrder> getAllOrdersSorted(OrderSort sort) {
-        return orders.stream()
-                .sorted(orderComparator(sort))
-                .collect(Collectors.toList());
+        try {
+            List<ServiceOrder> orders = getOrders();
+            return orders.stream()
+                    .sorted(orderComparator(sort))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при сортировке заказов: " + e.getMessage(), e);
+        }
     }
 
     /**
      * Получить текущие выполняемые заказы, отсортированные по заданному критерию.
      */
     public List<ServiceOrder> getCurrentOrderSorted(OrderSort sort) {
-        LocalDateTime now = LocalDateTime.now();
-        return orders.stream()
-                .filter(o -> isActive(o, now))
-                .sorted(orderComparator(sort))
-                .collect(Collectors.toList());
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            List<ServiceOrder> orders = getOrders();
+            return orders.stream()
+                    .filter(o -> isActive(o, now))
+                    .sorted(orderComparator(sort))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при получении текущих заказов: " + e.getMessage(), e);
+        }
     }
 
     /**
      * Получить заказ, выполняемый механиком прямо сейчас.
      */
     public Optional<ServiceOrder> getOrderByMechanicNow(int mechanicId) {
-        LocalDateTime now = LocalDateTime.now();
-        return orders.stream()
-                .filter(o -> o.getStatus() == OrderStatus.NEW)
-                .filter(o -> o.getMechanic().getId() == mechanicId)
-                .filter(o -> o.getTimeSlot().contains(now))
-                .findFirst();
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            List<ServiceOrder> orders = getOrders();
+            return orders.stream()
+                    .filter(o -> o.getStatus() == OrderStatus.NEW)
+                    .filter(o -> o.getMechanic().getId() == mechanicId)
+                    .filter(o -> o.getTimeSlot().contains(now))
+                    .findFirst();
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при поиске заказа механика: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -152,15 +277,20 @@ public class OrderService {
      * Получить заказы за период с фильтром по статусу и сортировкой.
      */
     public List<ServiceOrder> getOrders(LocalDateTime from, LocalDateTime to, Set<OrderStatus> statuses, OrderSort sort) {
-        return orders.stream()
-                .filter(o -> statuses == null || statuses.contains(o.getStatus()))
-                .filter(o -> {
-                    if (from == null && to == null) return true;
-                    return o.getTimeSlot().getStart().isBefore(to)
-                            && o.getTimeSlot().getEnd().isAfter(from);
-                })
-                .sorted(orderComparator(sort))
-                .collect(Collectors.toList());
+        try {
+            List<ServiceOrder> orders = getOrders();
+            return orders.stream()
+                    .filter(o -> statuses == null || statuses.contains(o.getStatus()))
+                    .filter(o -> {
+                        if (from == null && to == null) return true;
+                        return o.getTimeSlot().getStart().isBefore(to)
+                                && o.getTimeSlot().getEnd().isAfter(from);
+                    })
+                    .sorted(orderComparator(sort))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при получении заказов за период: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -185,6 +315,17 @@ public class OrderService {
         List<ServiceOrder> list = getOrders(from, to, st, OrderSort.BY_PLANNED_START);
         printList("Отчет по заказам [" + from + ".." + to + "]", list);
     }
+    
+    /**
+     * Откатывает транзакцию при ошибке.
+     */
+    private void rollback(Connection conn) {
+        try {
+            if (conn != null && !conn.isClosed()) {
+                conn.rollback();
+            }
+        } catch (SQLException e) {
+            System.err.println("Ошибка при откате транзакции: " + e.getMessage());
+        }
+    }
 }
-
-
