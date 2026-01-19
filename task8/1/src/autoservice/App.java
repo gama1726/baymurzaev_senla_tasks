@@ -1,6 +1,9 @@
 package autoservice;
 
 import autoservice.config.Configuration;
+import autoservice.dao.*;
+import autoservice.database.ConnectionManager;
+import autoservice.database.DatabaseInitializer;
 import autoservice.injection.ConfigInjector;
 import autoservice.injection.DIContainer;
 import autoservice.model.GarageSlot;
@@ -32,7 +35,31 @@ public class App {
             // Инициализация DI контейнера
             DIContainer container = DIContainer.getInstance();
             
-            // Регистрация всех компонентов
+            // Создание и загрузка конфигурации
+            Configuration configuration = new Configuration();
+            ConfigInjector.injectConfig(configuration);
+            // Регистрируем конфигурацию в контейнере для внедрения в Actions
+            container.registerInstance(Configuration.class, configuration);
+            
+            // Регистрация ConnectionManager и инициализация БД
+            container.registerComponent(ConnectionManager.class);
+            ConnectionManager connectionManager = container.getInstance(ConnectionManager.class);
+            // Заполняем конфигурацию через аннотации
+            ConfigInjector.injectConfig(connectionManager);
+            // Инициализируем соединение
+            connectionManager.initialize();
+            
+            // Инициализация структуры БД
+            container.registerComponent(DatabaseInitializer.class);
+            DatabaseInitializer dbInitializer = container.getInstance(DatabaseInitializer.class);
+            dbInitializer.initialize();
+            
+            // Регистрация DAO
+            container.registerComponent(MechanicDAO.class);
+            container.registerComponent(GarageSlotDAO.class);
+            container.registerComponent(ServiceOrderDAO.class);
+            
+            // Регистрация сервисов
             container.registerComponent(OrderService.class);
             container.registerComponent(MechanicService.class);
             container.registerComponent(GarageSlotService.class);
@@ -42,23 +69,13 @@ public class App {
             container.registerComponent(OrderImportExportService.class);
             container.registerComponent(ServiceManager.class);
             
-            // Создание и загрузка конфигурации
-            Configuration configuration = new Configuration();
-            ConfigInjector.injectConfig(configuration);
-            // Регистрируем конфигурацию в контейнере для внедрения в Actions
-            container.registerInstance(Configuration.class, configuration);
-            
             // Получение ServiceManager через DI
             ServiceManager manager = container.getInstance(ServiceManager.class);
 
-            // Немного стартовых данных, чтобы не вводить всё каждый раз
-            manager.addMechanic(new Mechanic(1, "Андрей"));
-            manager.addMechanic(new Mechanic(2, "Руслан"));
-            manager.addMechanic(new Mechanic(3, "Магомед"));
-
-            manager.addGarageSlot(new GarageSlot(101));
-            manager.addGarageSlot(new GarageSlot(102));
-            manager.addGarageSlot(new GarageSlot(103));
+            // Тестовые данные уже добавлены через insert_test_data.sql
+            // Если нужно добавить дополнительные данные, можно раскомментировать:
+            // manager.addMechanic(new Mechanic(1, "Андрей"));
+            // manager.addGarageSlot(new GarageSlot(101));
 
             // Abstract Factory для пунктов меню
             AbstractMenuFactory abstractFactory = new DefaultMenuFactory(manager, container);
@@ -70,6 +87,9 @@ public class App {
             // Контроллер UI (MVC) + главный цикл консольного меню
             MenuController controller = new MenuController(rootMenu);
             controller.run();
+            
+            // Закрываем соединение с БД при завершении
+            connectionManager.closeConnection();
         } catch (Exception e) {
             System.err.println("Ошибка при запуске приложения: " + e.getMessage());
             e.printStackTrace();
