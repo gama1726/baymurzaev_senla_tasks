@@ -3,13 +3,12 @@ package autoservice.service;
 import autoservice.annotation.Component;
 import autoservice.annotation.Inject;
 import autoservice.dao.GarageSlotDAO;
-import autoservice.database.ConnectionManager;
 import autoservice.model.GarageSlot;
 import autoservice.model.OrderStatus;
 import autoservice.model.ServiceOrder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,11 +19,10 @@ import java.util.stream.Collectors;
 @Component
 public class GarageSlotService {
     
-    @Inject
-    private GarageSlotDAO garageSlotDAO;
+    private static final Logger logger = LogManager.getLogger(GarageSlotService.class);
     
     @Inject
-    private ConnectionManager connectionManager;
+    private GarageSlotDAO garageSlotDAO;
     
     // OrderService получаем через lazy injection, чтобы избежать циклической зависимости
     private OrderService orderService;
@@ -33,13 +31,12 @@ public class GarageSlotService {
      * Добавить гаражное место.
      */
     public void addGarageSlot(GarageSlot slot) {
-        Connection conn = connectionManager.getConnection();
         try {
             garageSlotDAO.save(slot);
-            conn.commit();
             System.out.println("Добавлено место " + slot);
-        } catch (SQLException e) {
-            rollback(conn);
+            logger.info("GarageSlot added: {}", slot);
+        } catch (Exception e) {
+            logger.error("Error adding garage slot: {}", slot, e);
             throw new RuntimeException("Ошибка при добавлении гаражного места: " + e.getMessage(), e);
         }
     }
@@ -48,18 +45,18 @@ public class GarageSlotService {
      * Удалить гаражное место по ID.
      */
     public boolean removeGarageSlotById(int id) {
-        Connection conn = connectionManager.getConnection();
         try {
             boolean removed = garageSlotDAO.deleteById(id);
-            conn.commit();
             if (removed) {
                 System.out.println("Удалено место № " + id);
+                logger.info("GarageSlot removed: id={}", id);
             } else {
                 System.out.println("Место № " + id + " не найдено.");
+                logger.warn("GarageSlot not found for removal: id={}", id);
             }
             return removed;
-        } catch (SQLException e) {
-            rollback(conn);
+        } catch (Exception e) {
+            logger.error("Error removing garage slot: id={}", id, e);
             throw new RuntimeException("Ошибка при удалении гаражного места: " + e.getMessage(), e);
         }
     }
@@ -70,7 +67,8 @@ public class GarageSlotService {
     public Optional<GarageSlot> findGarageSlotById(int id) {
         try {
             return garageSlotDAO.findById(id);
-        } catch (SQLException e) {
+        } catch (Exception e) {
+            logger.error("Error finding garage slot: id={}", id, e);
             throw new RuntimeException("Ошибка при поиске гаражного места: " + e.getMessage(), e);
         }
     }
@@ -81,7 +79,8 @@ public class GarageSlotService {
     public List<GarageSlot> getGarageSlots() {
         try {
             return garageSlotDAO.findAll();
-        } catch (SQLException e) {
+        } catch (Exception e) {
+            logger.error("Error getting all garage slots", e);
             throw new RuntimeException("Ошибка при получении списка гаражных мест: " + e.getMessage(), e);
         }
     }
@@ -127,26 +126,12 @@ public class GarageSlotService {
      * Обновить статус гаражного места в БД.
      */
     public void updateGarageSlot(GarageSlot slot) {
-        Connection conn = connectionManager.getConnection();
         try {
             garageSlotDAO.update(slot);
-            conn.commit();
-        } catch (SQLException e) {
-            rollback(conn);
+            logger.debug("GarageSlot updated: {}", slot);
+        } catch (Exception e) {
+            logger.error("Error updating garage slot: {}", slot, e);
             throw new RuntimeException("Ошибка при обновлении гаражного места: " + e.getMessage(), e);
-        }
-    }
-    
-    /**
-     * Откатывает транзакцию при ошибке.
-     */
-    private void rollback(Connection conn) {
-        try {
-            if (conn != null && !conn.isClosed()) {
-                conn.rollback();
-            }
-        } catch (SQLException e) {
-            System.err.println("Ошибка при откате транзакции: " + e.getMessage());
         }
     }
 }

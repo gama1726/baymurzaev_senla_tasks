@@ -3,11 +3,10 @@ package autoservice.service;
 import autoservice.annotation.Component;
 import autoservice.annotation.Inject;
 import autoservice.dao.ServiceOrderDAO;
-import autoservice.database.ConnectionManager;
 import autoservice.model.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -18,21 +17,19 @@ import java.util.stream.Collectors;
 @Component
 public class OrderService {
     
+    private static final Logger logger = LogManager.getLogger(OrderService.class);
+    
     @Inject
     private ServiceOrderDAO orderDAO;
     
     @Inject
     private GarageSlotService garageSlotService;
-    
-    @Inject
-    private ConnectionManager connectionManager;
 
     /**
      * Добавить заказ.
      * Транзакция: сохраняет заказ и обновляет статус гаражного места.
      */
     public void addOrder(ServiceOrder order) {
-        Connection conn = connectionManager.getConnection();
         try {
             // Сохраняем заказ
             orderDAO.save(order);
@@ -40,10 +37,10 @@ public class OrderService {
             // Обновляем статус гаражного места (занято)
             garageSlotService.updateGarageSlot(order.getGarageSlot());
             
-            conn.commit();
             System.out.println("Добавлен заказ:\n" + order);
-        } catch (SQLException e) {
-            rollback(conn);
+            logger.info("ServiceOrder added: {}", order);
+        } catch (Exception e) {
+            logger.error("Error adding service order: {}", order, e);
             throw new RuntimeException("Ошибка при добавлении заказа: " + e.getMessage(), e);
         }
     }
@@ -54,7 +51,8 @@ public class OrderService {
     public Optional<ServiceOrder> findOrderById(int id) {
         try {
             return orderDAO.findById(id);
-        } catch (SQLException e) {
+        } catch (Exception e) {
+            logger.error("Error finding service order: id={}", id, e);
             throw new RuntimeException("Ошибка при поиске заказа: " + e.getMessage(), e);
         }
     }
@@ -65,7 +63,8 @@ public class OrderService {
     public List<ServiceOrder> getOrders() {
         try {
             return orderDAO.findAll();
-        } catch (SQLException e) {
+        } catch (Exception e) {
+            logger.error("Error getting all service orders", e);
             throw new RuntimeException("Ошибка при получении списка заказов: " + e.getMessage(), e);
         }
     }
@@ -75,7 +74,6 @@ public class OrderService {
      * Транзакция: обновляет статус заказа и освобождает гаражное место.
      */
     public boolean cancelOrder(int orderId) {
-        Connection conn = connectionManager.getConnection();
         try {
             Optional<ServiceOrder> orderOpt = orderDAO.findById(orderId);
             if (orderOpt.isEmpty()) {
@@ -89,10 +87,10 @@ public class OrderService {
             // Освобождаем гаражное место
             garageSlotService.updateGarageSlot(order.getGarageSlot());
             
-            conn.commit();
+            logger.info("ServiceOrder canceled: id={}", orderId);
             return true;
-        } catch (SQLException e) {
-            rollback(conn);
+        } catch (Exception e) {
+            logger.error("Error canceling service order: id={}", orderId, e);
             throw new RuntimeException("Ошибка при отмене заказа: " + e.getMessage(), e);
         }
     }
@@ -102,7 +100,6 @@ public class OrderService {
      * Транзакция: обновляет статус заказа и освобождает гаражное место.
      */
     public boolean closeOrder(int orderId) {
-        Connection conn = connectionManager.getConnection();
         try {
             Optional<ServiceOrder> orderOpt = orderDAO.findById(orderId);
             if (orderOpt.isEmpty()) {
@@ -116,10 +113,10 @@ public class OrderService {
             // Освобождаем гаражное место
             garageSlotService.updateGarageSlot(order.getGarageSlot());
             
-            conn.commit();
+            logger.info("ServiceOrder closed: id={}", orderId);
             return true;
-        } catch (SQLException e) {
-            rollback(conn);
+        } catch (Exception e) {
+            logger.error("Error closing service order: id={}", orderId, e);
             throw new RuntimeException("Ошибка при закрытии заказа: " + e.getMessage(), e);
         }
     }
@@ -129,7 +126,6 @@ public class OrderService {
      * Транзакция: обновляет статус заказа и освобождает гаражное место.
      */
     public boolean deleteOrder(int orderId) {
-        Connection conn = connectionManager.getConnection();
         try {
             Optional<ServiceOrder> orderOpt = orderDAO.findById(orderId);
             if (orderOpt.isEmpty()) {
@@ -143,10 +139,10 @@ public class OrderService {
             // Освобождаем гаражное место
             garageSlotService.updateGarageSlot(order.getGarageSlot());
             
-            conn.commit();
+            logger.info("ServiceOrder deleted: id={}", orderId);
             return true;
-        } catch (SQLException e) {
-            rollback(conn);
+        } catch (Exception e) {
+            logger.error("Error deleting service order: id={}", orderId, e);
             throw new RuntimeException("Ошибка при удалении заказа: " + e.getMessage(), e);
         }
     }
@@ -155,13 +151,14 @@ public class OrderService {
      * Физически удалить заказ из БД (для импорта).
      */
     public boolean removeOrderById(int orderId) {
-        Connection conn = connectionManager.getConnection();
         try {
             boolean removed = orderDAO.deleteById(orderId);
-            conn.commit();
+            if (removed) {
+                logger.info("ServiceOrder physically removed: id={}", orderId);
+            }
             return removed;
-        } catch (SQLException e) {
-            rollback(conn);
+        } catch (Exception e) {
+            logger.error("Error physically removing service order: id={}", orderId, e);
             throw new RuntimeException("Ошибка при физическом удалении заказа: " + e.getMessage(), e);
         }
     }
@@ -171,7 +168,6 @@ public class OrderService {
      * Транзакция: обновляет время заказа в БД.
      */
     public boolean shiftOrder(int orderId, int minutes) {
-        Connection conn = connectionManager.getConnection();
         try {
             Optional<ServiceOrder> orderOpt = orderDAO.findById(orderId);
             if (orderOpt.isEmpty()) {
@@ -182,10 +178,10 @@ public class OrderService {
             order.shift(minutes);
             orderDAO.update(order);
             
-            conn.commit();
+            logger.info("ServiceOrder shifted: id={}, minutes={}", orderId, minutes);
             return true;
-        } catch (SQLException e) {
-            rollback(conn);
+        } catch (Exception e) {
+            logger.error("Error shifting service order: id={}, minutes={}", orderId, minutes, e);
             throw new RuntimeException("Ошибка при смещении времени заказа: " + e.getMessage(), e);
         }
     }
@@ -316,16 +312,4 @@ public class OrderService {
         printList("Отчет по заказам [" + from + ".." + to + "]", list);
     }
     
-    /**
-     * Откатывает транзакцию при ошибке.
-     */
-    private void rollback(Connection conn) {
-        try {
-            if (conn != null && !conn.isClosed()) {
-                conn.rollback();
-            }
-        } catch (SQLException e) {
-            System.err.println("Ошибка при откате транзакции: " + e.getMessage());
-        }
-    }
 }
