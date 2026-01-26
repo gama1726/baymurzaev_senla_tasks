@@ -5,6 +5,7 @@ import autoservice.annotation.PropertyType;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -62,11 +63,41 @@ public class ConfigInjector {
     
     /**
      * Загружает свойства из файла.
+     * Пытается найти файл в разных местах: ресурсы, src/, корень проекта.
      */
     private static Properties loadProperties(String fileName) throws IOException {
         Properties properties = new Properties();
-        try (FileInputStream fis = new FileInputStream(fileName)) {
-            properties.load(fis);
+        
+        // Пытаемся загрузить из разных мест
+        InputStream is = null;
+        
+        // 1. Пытаемся загрузить из ресурсов (classpath)
+        is = ConfigInjector.class.getClassLoader().getResourceAsStream(fileName);
+        
+        // 2. Если не найден в ресурсах, пытаемся из файловой системы
+        if (is == null) {
+            // Пробуем src/config.properties
+            java.io.File file = new java.io.File("src/" + fileName);
+            if (file.exists()) {
+                is = new FileInputStream(file);
+            }
+        }
+        
+        // 3. Пробуем в корне проекта
+        if (is == null) {
+            java.io.File file = new java.io.File(fileName);
+            if (file.exists()) {
+                is = new FileInputStream(file);
+            }
+        }
+        
+        if (is == null) {
+            throw new IOException("Не удалось найти файл конфигурации: " + fileName + 
+                " (проверьте src/" + fileName + " или добавьте в resources)");
+        }
+        
+        try (InputStream inputStream = is) {
+            properties.load(inputStream);
         }
         return properties;
     }
