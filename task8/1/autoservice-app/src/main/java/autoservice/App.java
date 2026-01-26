@@ -4,6 +4,7 @@ import autoservice.config.Configuration;
 import autoservice.dao.*;
 import autoservice.database.ConnectionManager;
 import autoservice.database.DatabaseInitializer;
+import autoservice.database.JpaEntityManagerFactory;
 import autoservice.injection.ConfigInjector;
 import autoservice.injection.DIContainer;
 import autoservice.model.GarageSlot;
@@ -53,7 +54,12 @@ public class App {
             // Регистрируем конфигурацию в контейнере для внедрения в Actions
             container.registerInstance(Configuration.class, configuration);
             
-            // Регистрация ConnectionManager и инициализация БД
+            // Регистрация JpaEntityManagerFactory и инициализация JPA
+            container.registerComponent(JpaEntityManagerFactory.class);
+            JpaEntityManagerFactory jpaEntityManagerFactory = container.getInstance(JpaEntityManagerFactory.class);
+            jpaEntityManagerFactory.initialize();
+            
+            // Регистрация ConnectionManager для DatabaseInitializer (используется только для первоначальной инициализации)
             container.registerComponent(ConnectionManager.class);
             ConnectionManager connectionManager = container.getInstance(ConnectionManager.class);
             // Заполняем конфигурацию через аннотации
@@ -61,7 +67,7 @@ public class App {
             // Инициализируем соединение
             connectionManager.initialize();
             
-            // Инициализация структуры БД
+            // Инициализация структуры БД (используется только для первоначальной инициализации)
             container.registerComponent(DatabaseInitializer.class);
             DatabaseInitializer dbInitializer = container.getInstance(DatabaseInitializer.class);
             dbInitializer.initialize();
@@ -96,19 +102,21 @@ public class App {
             MenuBuilder builder = new MenuBuilder(abstractFactory);
             Menu rootMenu = builder.buildRootMenu();
 
-            // Добавляем shutdown hook для гарантированного закрытия соединения
+            // Добавляем shutdown hook для гарантированного закрытия соединений
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 logger.info("Завершение работы приложения (shutdown hook)");
                 connectionManager.closeConnection();
+                jpaEntityManagerFactory.close();
             }));
             
             // Контроллер UI (MVC) + главный цикл консольного меню
             MenuController controller = new MenuController(rootMenu);
             controller.run();
             
-            // Закрываем соединение с БД при завершении
+            // Закрываем соединения с БД при завершении
             logger.info("Завершение работы приложения");
             connectionManager.closeConnection();
+            jpaEntityManagerFactory.close();
         } catch (Exception e) {
             logger.error("Критическая ошибка при запуске приложения", e);
             System.err.println("Ошибка при запуске приложения: " + e.getMessage());
