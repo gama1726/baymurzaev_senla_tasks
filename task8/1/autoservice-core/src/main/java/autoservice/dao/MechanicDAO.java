@@ -2,115 +2,142 @@ package autoservice.dao;
 
 import autoservice.annotation.Component;
 import autoservice.annotation.Inject;
-import autoservice.database.ConnectionManager;
+import autoservice.database.JpaEntityManagerFactory;
+import autoservice.entity.MechanicEntity;
+import autoservice.mapper.EntityMapper;
 import autoservice.model.Mechanic;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
- * DAO для работы с механиками в БД.
+ * DAO для работы с механиками в БД через JPA.
  */
 @Component
 public class MechanicDAO implements GenericDAO<Mechanic, Integer> {
     
-    // Константы SQL запросов
-    private static final String TABLE_NAME = "mechanics";
-    private static final String COLUMN_ID = "id";
-    private static final String COLUMN_NAME = "name";
-    
-    private static final String SQL_INSERT = 
-        "INSERT INTO " + TABLE_NAME + " (" + COLUMN_ID + ", " + COLUMN_NAME + ") VALUES (?, ?)";
-    
-    private static final String SQL_SELECT_BY_ID = 
-        "SELECT * FROM " + TABLE_NAME + " WHERE " + COLUMN_ID + " = ?";
-    
-    private static final String SQL_SELECT_ALL = 
-        "SELECT * FROM " + TABLE_NAME;
-    
-    private static final String SQL_UPDATE = 
-        "UPDATE " + TABLE_NAME + " SET " + COLUMN_NAME + " = ? WHERE " + COLUMN_ID + " = ?";
-    
-    private static final String SQL_DELETE = 
-        "DELETE FROM " + TABLE_NAME + " WHERE " + COLUMN_ID + " = ?";
+    private static final Logger logger = LogManager.getLogger(MechanicDAO.class);
     
     @Inject
-    private ConnectionManager connectionManager;
-    
-    @Override
-    public Connection getConnection() {
-        return connectionManager.getConnection();
-    }
-    
-    @Override
-    public Mechanic save(Mechanic mechanic) throws SQLException {
-        Connection conn = getConnection();
-        try (PreparedStatement stmt = conn.prepareStatement(SQL_INSERT)) {
-            stmt.setInt(1, mechanic.getId());
-            stmt.setString(2, mechanic.getName());
-            stmt.executeUpdate();
-            return mechanic;
-        }
-    }
-    
-    @Override
-    public Optional<Mechanic> findById(Integer id) throws SQLException {
-        Connection conn = getConnection();
-        try (PreparedStatement stmt = conn.prepareStatement(SQL_SELECT_BY_ID)) {
-            stmt.setInt(1, id);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapResultSetToMechanic(rs));
-                }
-                return Optional.empty();
-            }
-        }
-    }
-    
-    @Override
-    public List<Mechanic> findAll() throws SQLException {
-        Connection conn = getConnection();
-        List<Mechanic> mechanics = new ArrayList<>();
-        try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(SQL_SELECT_ALL)) {
-            while (rs.next()) {
-                mechanics.add(mapResultSetToMechanic(rs));
-            }
-        }
-        return mechanics;
-    }
-    
-    @Override
-    public Mechanic update(Mechanic mechanic) throws SQLException {
-        Connection conn = getConnection();
-        try (PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE)) {
-            stmt.setString(1, mechanic.getName());
-            stmt.setInt(2, mechanic.getId());
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected == 0) {
-                throw new SQLException("Механик с ID " + mechanic.getId() + " не найден для обновления");
-            }
-            return mechanic;
-        }
-    }
-    
-    @Override
-    public boolean deleteById(Integer id) throws SQLException {
-        Connection conn = getConnection();
-        try (PreparedStatement stmt = conn.prepareStatement(SQL_DELETE)) {
-            stmt.setInt(1, id);
-            return stmt.executeUpdate() > 0;
-        }
-    }
+    private JpaEntityManagerFactory entityManagerFactory;
     
     /**
-     * Маппит ResultSet в объект Mechanic.
+     * Получает EntityManager из фабрики.
      */
-    private Mechanic mapResultSetToMechanic(ResultSet rs) throws SQLException {
-        int id = rs.getInt(COLUMN_ID);
-        String name = rs.getString(COLUMN_NAME);
-        return new Mechanic(id, name);
+    private EntityManager getEntityManager() {
+        return entityManagerFactory.getEntityManagerFactory().createEntityManager();
+    }
+    
+    @Override
+    public Mechanic save(Mechanic mechanic) {
+        EntityManager em = getEntityManager();
+        EntityTransaction transaction = em.getTransaction();
+        try {
+            transaction.begin();
+            MechanicEntity entity = EntityMapper.toMechanicEntity(mechanic);
+            em.persist(entity);
+            transaction.commit();
+            logger.debug("Mechanic saved: {}", mechanic);
+            return mechanic;
+        } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            logger.error("Error saving mechanic: {}", mechanic, e);
+            throw new RuntimeException("Ошибка при сохранении механика: " + e.getMessage(), e);
+        } finally {
+            em.close();
+        }
+    }
+    
+    @Override
+    public Optional<Mechanic> findById(Integer id) {
+        EntityManager em = getEntityManager();
+        try {
+            MechanicEntity entity = em.find(MechanicEntity.class, id);
+            if (entity == null) {
+                return Optional.empty();
+            }
+            return Optional.of(EntityMapper.toMechanic(entity));
+        } catch (Exception e) {
+            logger.error("Error finding mechanic by id: {}", id, e);
+            throw new RuntimeException("Ошибка при поиске механика: " + e.getMessage(), e);
+        } finally {
+            em.close();
+        }
+    }
+    
+    @Override
+    public List<Mechanic> findAll() {
+        EntityManager em = getEntityManager();
+        try {
+            List<MechanicEntity> entities = em.createQuery(
+                "SELECT m FROM MechanicEntity m", MechanicEntity.class
+            ).getResultList();
+            return entities.stream()
+                .map(EntityMapper::toMechanic)
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Error finding all mechanics", e);
+            throw new RuntimeException("Ошибка при получении списка механиков: " + e.getMessage(), e);
+        } finally {
+            em.close();
+        }
+    }
+    
+    @Override
+    public Mechanic update(Mechanic mechanic) {
+        EntityManager em = getEntityManager();
+        EntityTransaction transaction = em.getTransaction();
+        try {
+            transaction.begin();
+            MechanicEntity entity = em.find(MechanicEntity.class, mechanic.getId());
+            if (entity == null) {
+                throw new RuntimeException("Механик с ID " + mechanic.getId() + " не найден для обновления");
+            }
+            entity.setName(mechanic.getName());
+            em.merge(entity);
+            transaction.commit();
+            logger.debug("Mechanic updated: {}", mechanic);
+            return mechanic;
+        } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            logger.error("Error updating mechanic: {}", mechanic, e);
+            throw new RuntimeException("Ошибка при обновлении механика: " + e.getMessage(), e);
+        } finally {
+            em.close();
+        }
+    }
+    
+    @Override
+    public boolean deleteById(Integer id) {
+        EntityManager em = getEntityManager();
+        EntityTransaction transaction = em.getTransaction();
+        try {
+            transaction.begin();
+            MechanicEntity entity = em.find(MechanicEntity.class, id);
+            if (entity == null) {
+                return false;
+            }
+            em.remove(entity);
+            transaction.commit();
+            logger.debug("Mechanic deleted: id={}", id);
+            return true;
+        } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            logger.error("Error deleting mechanic: id={}", id, e);
+            throw new RuntimeException("Ошибка при удалении механика: " + e.getMessage(), e);
+        } finally {
+            em.close();
+        }
     }
 }

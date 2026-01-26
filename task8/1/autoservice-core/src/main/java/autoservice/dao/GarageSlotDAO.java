@@ -2,119 +2,142 @@ package autoservice.dao;
 
 import autoservice.annotation.Component;
 import autoservice.annotation.Inject;
-import autoservice.database.ConnectionManager;
+import autoservice.database.JpaEntityManagerFactory;
+import autoservice.entity.GarageSlotEntity;
+import autoservice.mapper.EntityMapper;
 import autoservice.model.GarageSlot;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
- * DAO для работы с гаражными местами в БД.
+ * DAO для работы с гаражными местами в БД через JPA.
  */
 @Component
 public class GarageSlotDAO implements GenericDAO<GarageSlot, Integer> {
     
-    // Константы SQL запросов
-    private static final String TABLE_NAME = "garage_slots";
-    private static final String COLUMN_ID = "id";
-    private static final String COLUMN_IS_OCCUPIED = "is_occupied";
-    
-    private static final String SQL_INSERT = 
-        "INSERT INTO " + TABLE_NAME + " (" + COLUMN_ID + ", " + COLUMN_IS_OCCUPIED + ") VALUES (?, ?)";
-    
-    private static final String SQL_SELECT_BY_ID = 
-        "SELECT * FROM " + TABLE_NAME + " WHERE " + COLUMN_ID + " = ?";
-    
-    private static final String SQL_SELECT_ALL = 
-        "SELECT * FROM " + TABLE_NAME;
-    
-    private static final String SQL_UPDATE = 
-        "UPDATE " + TABLE_NAME + " SET " + COLUMN_IS_OCCUPIED + " = ? WHERE " + COLUMN_ID + " = ?";
-    
-    private static final String SQL_DELETE = 
-        "DELETE FROM " + TABLE_NAME + " WHERE " + COLUMN_ID + " = ?";
+    private static final Logger logger = LogManager.getLogger(GarageSlotDAO.class);
     
     @Inject
-    private ConnectionManager connectionManager;
-    
-    @Override
-    public Connection getConnection() {
-        return connectionManager.getConnection();
-    }
-    
-    @Override
-    public GarageSlot save(GarageSlot garageSlot) throws SQLException {
-        Connection conn = getConnection();
-        try (PreparedStatement stmt = conn.prepareStatement(SQL_INSERT)) {
-            stmt.setInt(1, garageSlot.getId());
-            stmt.setBoolean(2, garageSlot.getStatus());
-            stmt.executeUpdate();
-            return garageSlot;
-        }
-    }
-    
-    @Override
-    public Optional<GarageSlot> findById(Integer id) throws SQLException {
-        Connection conn = getConnection();
-        try (PreparedStatement stmt = conn.prepareStatement(SQL_SELECT_BY_ID)) {
-            stmt.setInt(1, id);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapResultSetToGarageSlot(rs));
-                }
-                return Optional.empty();
-            }
-        }
-    }
-    
-    @Override
-    public List<GarageSlot> findAll() throws SQLException {
-        Connection conn = getConnection();
-        List<GarageSlot> garageSlots = new ArrayList<>();
-        try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(SQL_SELECT_ALL)) {
-            while (rs.next()) {
-                garageSlots.add(mapResultSetToGarageSlot(rs));
-            }
-        }
-        return garageSlots;
-    }
-    
-    @Override
-    public GarageSlot update(GarageSlot garageSlot) throws SQLException {
-        Connection conn = getConnection();
-        try (PreparedStatement stmt = conn.prepareStatement(SQL_UPDATE)) {
-            stmt.setBoolean(1, garageSlot.getStatus());
-            stmt.setInt(2, garageSlot.getId());
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected == 0) {
-                throw new SQLException("Гаражное место с ID " + garageSlot.getId() + " не найдено для обновления");
-            }
-            return garageSlot;
-        }
-    }
-    
-    @Override
-    public boolean deleteById(Integer id) throws SQLException {
-        Connection conn = getConnection();
-        try (PreparedStatement stmt = conn.prepareStatement(SQL_DELETE)) {
-            stmt.setInt(1, id);
-            return stmt.executeUpdate() > 0;
-        }
-    }
+    private JpaEntityManagerFactory entityManagerFactory;
     
     /**
-     * Маппит ResultSet в объект GarageSlot.
+     * Получает EntityManager из фабрики.
      */
-    private GarageSlot mapResultSetToGarageSlot(ResultSet rs) throws SQLException {
-        int id = rs.getInt(COLUMN_ID);
-        boolean isOccupied = rs.getBoolean(COLUMN_IS_OCCUPIED);
-        GarageSlot slot = new GarageSlot(id);
-        if (isOccupied) {
-            slot.occupy();
+    private EntityManager getEntityManager() {
+        return entityManagerFactory.getEntityManagerFactory().createEntityManager();
+    }
+    
+    @Override
+    public GarageSlot save(GarageSlot garageSlot) {
+        EntityManager em = getEntityManager();
+        EntityTransaction transaction = em.getTransaction();
+        try {
+            transaction.begin();
+            GarageSlotEntity entity = EntityMapper.toGarageSlotEntity(garageSlot);
+            em.persist(entity);
+            transaction.commit();
+            logger.debug("GarageSlot saved: {}", garageSlot);
+            return garageSlot;
+        } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            logger.error("Error saving garage slot: {}", garageSlot, e);
+            throw new RuntimeException("Ошибка при сохранении гаражного места: " + e.getMessage(), e);
+        } finally {
+            em.close();
         }
-        return slot;
+    }
+    
+    @Override
+    public Optional<GarageSlot> findById(Integer id) {
+        EntityManager em = getEntityManager();
+        try {
+            GarageSlotEntity entity = em.find(GarageSlotEntity.class, id);
+            if (entity == null) {
+                return Optional.empty();
+            }
+            return Optional.of(EntityMapper.toGarageSlot(entity));
+        } catch (Exception e) {
+            logger.error("Error finding garage slot by id: {}", id, e);
+            throw new RuntimeException("Ошибка при поиске гаражного места: " + e.getMessage(), e);
+        } finally {
+            em.close();
+        }
+    }
+    
+    @Override
+    public List<GarageSlot> findAll() {
+        EntityManager em = getEntityManager();
+        try {
+            List<GarageSlotEntity> entities = em.createQuery(
+                "SELECT g FROM GarageSlotEntity g", GarageSlotEntity.class
+            ).getResultList();
+            return entities.stream()
+                .map(EntityMapper::toGarageSlot)
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Error finding all garage slots", e);
+            throw new RuntimeException("Ошибка при получении списка гаражных мест: " + e.getMessage(), e);
+        } finally {
+            em.close();
+        }
+    }
+    
+    @Override
+    public GarageSlot update(GarageSlot garageSlot) {
+        EntityManager em = getEntityManager();
+        EntityTransaction transaction = em.getTransaction();
+        try {
+            transaction.begin();
+            GarageSlotEntity entity = em.find(GarageSlotEntity.class, garageSlot.getId());
+            if (entity == null) {
+                throw new RuntimeException("Гаражное место с ID " + garageSlot.getId() + " не найдено для обновления");
+            }
+            entity.setOccupied(garageSlot.getStatus());
+            em.merge(entity);
+            transaction.commit();
+            logger.debug("GarageSlot updated: {}", garageSlot);
+            return garageSlot;
+        } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            logger.error("Error updating garage slot: {}", garageSlot, e);
+            throw new RuntimeException("Ошибка при обновлении гаражного места: " + e.getMessage(), e);
+        } finally {
+            em.close();
+        }
+    }
+    
+    @Override
+    public boolean deleteById(Integer id) {
+        EntityManager em = getEntityManager();
+        EntityTransaction transaction = em.getTransaction();
+        try {
+            transaction.begin();
+            GarageSlotEntity entity = em.find(GarageSlotEntity.class, id);
+            if (entity == null) {
+                return false;
+            }
+            em.remove(entity);
+            transaction.commit();
+            logger.debug("GarageSlot deleted: id={}", id);
+            return true;
+        } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            logger.error("Error deleting garage slot: id={}", id, e);
+            throw new RuntimeException("Ошибка при удалении гаражного места: " + e.getMessage(), e);
+        } finally {
+            em.close();
+        }
     }
 }
