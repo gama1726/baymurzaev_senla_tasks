@@ -3,32 +3,60 @@
     <Appenders>
         <!-- Console Appender -->
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %logger{36} - %msg%n"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n"/>
         </Console>
         
-        <!-- File Appender -->
-        <File name="FileAppender" fileName="logs/autoservice.log">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %logger{36} - %msg%n"/>
-        </File>
+        <!-- File Appender для ошибок -->
+        <RollingFile name="ErrorFile" fileName="logs/error.log"
+                     filePattern="logs/error-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n%throwable"/>
+            <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+        
+        <!-- File Appender для всех логов -->
+        <RollingFile name="AllLogsFile" fileName="logs/autoservice.log"
+                     filePattern="logs/autoservice-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n%throwable"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
     </Appenders>
     
     <Loggers>
+        <!-- Логирование для DAO и сервисов -->
+        <Logger name="autoservice.dao" level="DEBUG" additivity="false">
+            <AppenderRef ref="AllLogsFile"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+        
+        <Logger name="autoservice.service" level="INFO" additivity="false">
+            <AppenderRef ref="AllLogsFile"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+        
+        <Logger name="autoservice.database" level="INFO" additivity="false">
+            <AppenderRef ref="AllLogsFile"/>
+            <AppenderRef ref="Console"/>
+        </Logger>
+        
+        <!-- Hibernate логирование -->
+        <Logger name="org.hibernate" level="WARN" additivity="false">
+            <AppenderRef ref="AllLogsFile"/>
+        </Logger>
+        
         <!-- Root Logger -->
-        <Root level="info">
+        <Root level="INFO">
             <AppenderRef ref="Console"/>
-            <AppenderRef ref="FileAppender"/>
+            <AppenderRef ref="AllLogsFile"/>
+            <AppenderRef ref="ErrorFile"/>
         </Root>
-        
-        <!-- Application Loggers -->
-        <Logger name="autoservice" level="info" additivity="false">
-            <AppenderRef ref="Console"/>
-            <AppenderRef ref="FileAppender"/>
-        </Logger>
-        
-        <!-- Database Logger -->
-        <Logger name="autoservice.database" level="debug" additivity="false">
-            <AppenderRef ref="Console"/>
-            <AppenderRef ref="FileAppender"/>
-        </Logger>
     </Loggers>
 </Configuration>
