@@ -1,8 +1,8 @@
 package autoservice.dao;
 
-import autoservice.annotation.Component;
-import autoservice.annotation.Inject;
 import autoservice.database.JpaEntityManagerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 import autoservice.entity.MechanicEntity;
 import autoservice.mapper.EntityMapper;
 import autoservice.model.Mechanic;
@@ -18,12 +18,12 @@ import java.util.stream.Collectors;
 /**
  * DAO для работы с механиками в БД через JPA.
  */
-@Component
+@Repository
 public class MechanicDAO implements GenericDAO<Mechanic, Integer> {
-    
+
     private static final Logger logger = LogManager.getLogger(MechanicDAO.class);
-    
-    @Inject
+
+    @Autowired
     private JpaEntityManagerFactory entityManagerFactory;
     
     /**
