@@ -1,8 +1,8 @@
 package autoservice.service.importexport;
 
-import autoservice.annotation.Component;
-import autoservice.annotation.Inject;
 import autoservice.exception.ImportExportException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import autoservice.model.GarageSlot;
 import autoservice.service.GarageSlotService;
 
@@ -18,12 +18,12 @@ import java.util.Optional;
 /**
  * Сервис для импорта и экспорта гаражных мест в формате CSV.
  */
-@Component
+@Service
 public class GarageSlotImportExportService {
     private static final String CSV_HEADER = "id";
     private static final String CSV_SEPARATOR = ",";
 
-    @Inject
+    @Autowired
     private GarageSlotService garageSlotService;
 
     /**

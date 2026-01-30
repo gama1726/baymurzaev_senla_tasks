@@ -1,22 +1,23 @@
 package autoservice.service;
 
-import autoservice.annotation.Component;
-import autoservice.annotation.Inject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
 /**
  * Сервис для расчета свободных слотов и поиска свободных дат.
  */
-@Component
+@Service
 public class CapacityService {
-    @Inject
+
+    @Autowired
     private MechanicService mechanicService;
-    
-    @Inject
+
+    @Autowired
     private GarageSlotService garageSlotService;
-    
-    @Inject
+
+    @Autowired
     private OrderService orderService;
 
     /**

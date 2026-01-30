@@ -1,8 +1,9 @@
 package autoservice.service;
 
-import autoservice.annotation.Component;
-import autoservice.annotation.Inject;
 import autoservice.dao.MechanicDAO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
 import autoservice.model.Mechanic;
 import autoservice.model.MechanicSort;
 import autoservice.model.OrderStatus;
@@ -17,15 +18,16 @@ import java.util.stream.Collectors;
 /**
  * Сервис для управления механиками.
  */
-@Component
+@Service
 public class MechanicService {
-    
+
     private static final Logger logger = LogManager.getLogger(MechanicService.class);
-    
-    @Inject
+
+    @Autowired
     private MechanicDAO mechanicDAO;
-    
-    // OrderService получаем через lazy injection, чтобы избежать циклической зависимости
+
+    @Autowired
+    @Lazy
     private OrderService orderService;
 
     /**
@@ -112,10 +114,6 @@ public class MechanicService {
      * Подсчитать текущую занятость механика.
      */
     private int currentWorkload(Mechanic m, LocalDateTime when) {
-        if (orderService == null) {
-            // Lazy injection через DIContainer
-            orderService = autoservice.injection.DIContainer.getInstance().getInstance(OrderService.class);
-        }
         return (int) orderService.getOrders().stream()
                 .filter(o -> o.getStatus() == OrderStatus.NEW)
                 .filter(o -> o.getMechanic().getId() == m.getId())

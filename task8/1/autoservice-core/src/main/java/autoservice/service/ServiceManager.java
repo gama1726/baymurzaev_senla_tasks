@@ -1,7 +1,7 @@
 package autoservice.service;
 
-import autoservice.annotation.Component;
-import autoservice.annotation.Inject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import autoservice.exception.AutoserviceException;
 import autoservice.exception.EntityNotFoundException;
 import autoservice.exception.ImportExportException;
@@ -14,32 +14,31 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 /**
- * Главный сервис для управления автосервисом (Singleton через DI).
+ * Главный сервис для управления автосервисом (Singleton через Spring DI).
  * Делегирует вызовы специализированным сервисам.
  */
-@Component
+@Service
 public class ServiceManager {
-    // ----- Специализированные сервисы -----
-    @Inject
+
+    @Autowired
     private OrderService orderService;
-    
-    @Inject
+
+    @Autowired
     private MechanicService mechanicService;
-    
-    @Inject
+
+    @Autowired
     private GarageSlotService garageSlotService;
-    
-    @Inject
+
+    @Autowired
     private CapacityService capacityService;
-    
-    // ----- Сервисы импорта/экспорта -----
-    @Inject
+
+    @Autowired
     private MechanicImportExportService mechanicImportExportService;
-    
-    @Inject
+
+    @Autowired
     private GarageSlotImportExportService garageSlotImportExportService;
-    
-    @Inject
+
+    @Autowired
     private OrderImportExportService orderImportExportService;
     // ----- Механики -----
     public void addMechanic(Mechanic mechanic){

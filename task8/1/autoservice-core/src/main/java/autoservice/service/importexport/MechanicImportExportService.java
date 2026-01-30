@@ -1,8 +1,8 @@
 package autoservice.service.importexport;
 
-import autoservice.annotation.Component;
-import autoservice.annotation.Inject;
 import autoservice.exception.ImportExportException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import autoservice.model.Mechanic;
 import autoservice.service.MechanicService;
 
@@ -18,12 +18,12 @@ import java.util.Optional;
 /**
  * Сервис для импорта и экспорта механиков в формате CSV.
  */
-@Component
+@Service
 public class MechanicImportExportService {
     private static final String CSV_HEADER = "id,name";
     private static final String CSV_SEPARATOR = ",";
 
-    @Inject
+    @Autowired
     private MechanicService mechanicService;
 
     /**

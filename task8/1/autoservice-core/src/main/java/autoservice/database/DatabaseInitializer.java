@@ -1,7 +1,7 @@
 package autoservice.database;
 
-import autoservice.annotation.Component;
-import autoservice.annotation.Inject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,13 +20,13 @@ import java.util.stream.Collectors;
  */
 @Component
 public class DatabaseInitializer {
-    
+
     private static final Logger logger = LogManager.getLogger(DatabaseInitializer.class);
     private static final String CREATE_SCHEMA_FILE = "/autoservice/database/create_schema.sql";
     private static final String INSERT_TEST_DATA_FILE = "/autoservice/database/insert_test_data.sql";
     private static final String INITIALIZATION_ERROR = "Ошибка при инициализации БД";
-    
-    @Inject
+
+    @Autowired
     private ConnectionManager connectionManager;
     
     /**

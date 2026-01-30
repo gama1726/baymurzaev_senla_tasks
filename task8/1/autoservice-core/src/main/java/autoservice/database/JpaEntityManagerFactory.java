@@ -1,7 +1,7 @@
 package autoservice.database;
 
-import autoservice.annotation.Component;
 import jakarta.persistence.EntityManagerFactory;
+import org.springframework.stereotype.Component;
 import jakarta.persistence.Persistence;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
