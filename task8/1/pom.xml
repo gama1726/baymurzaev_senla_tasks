@@ -27,6 +27,8 @@
         <log4j2.version>2.23.1</log4j2.version>
         <checkstyle.version>3.5.0</checkstyle.version>
         <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
+        <hibernate.version>6.4.4.Final</hibernate.version>
+        <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
     </properties>
 
     <dependencyManagement>
@@ -48,6 +50,20 @@
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-api</artifactId>
                 <version>${log4j2.version}</version>
+            </dependency>
+            
+            <!-- Jakarta Persistence API -->
+            <dependency>
+                <groupId>jakarta.persistence</groupId>
+                <artifactId>jakarta.persistence-api</artifactId>
+                <version>${jakarta.persistence.version}</version>
+            </dependency>
+            
+            <!-- Hibernate Core -->
+            <dependency>
+                <groupId>org.hibernate.orm</groupId>
+                <artifactId>hibernate-core</artifactId>
+                <version>${hibernate.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

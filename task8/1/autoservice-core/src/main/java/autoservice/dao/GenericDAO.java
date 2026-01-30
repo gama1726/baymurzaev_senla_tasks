@@ -1,7 +1,5 @@
 package autoservice.dao;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,7 +7,7 @@ import java.util.Optional;
  * Базовый интерфейс для DAO с общими CRUD операциями.
  * Реализует паттерн GenericDAO.
  * 
- * @param <T> тип сущности
+ * @param <T> тип сущности (Domain модель)
  * @param <ID> тип идентификатора
  */
 public interface GenericDAO<T, ID> {
@@ -19,49 +17,37 @@ public interface GenericDAO<T, ID> {
      * 
      * @param entity сущность для сохранения
      * @return сохраненная сущность
-     * @throws SQLException если произошла ошибка при работе с БД
      */
-    T save(T entity) throws SQLException;
+    T save(T entity);
     
     /**
      * Находит сущность по идентификатору.
      * 
      * @param id идентификатор
      * @return Optional с сущностью, если найдена
-     * @throws SQLException если произошла ошибка при работе с БД
      */
-    Optional<T> findById(ID id) throws SQLException;
+    Optional<T> findById(ID id);
     
     /**
      * Находит все сущности.
      * 
      * @return список всех сущностей
-     * @throws SQLException если произошла ошибка при работе с БД
      */
-    List<T> findAll() throws SQLException;
+    List<T> findAll();
     
     /**
      * Обновляет сущность в БД.
      * 
      * @param entity сущность для обновления
      * @return обновленная сущность
-     * @throws SQLException если произошла ошибка при работе с БД
      */
-    T update(T entity) throws SQLException;
+    T update(T entity);
     
     /**
      * Удаляет сущность по идентификатору.
      * 
      * @param id идентификатор
      * @return true если сущность была удалена, false если не найдена
-     * @throws SQLException если произошла ошибка при работе с БД
      */
-    boolean deleteById(ID id) throws SQLException;
-    
-    /**
-     * Получает соединение с БД.
-     * 
-     * @return соединение с БД
-     */
-    Connection getConnection();
+    boolean deleteById(ID id);
 }

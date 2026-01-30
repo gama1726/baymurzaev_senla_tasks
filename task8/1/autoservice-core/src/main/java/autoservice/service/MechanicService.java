@@ -3,15 +3,13 @@ package autoservice.service;
 import autoservice.annotation.Component;
 import autoservice.annotation.Inject;
 import autoservice.dao.MechanicDAO;
-import autoservice.database.ConnectionManager;
-import autoservice.exception.AutoserviceException;
 import autoservice.model.Mechanic;
 import autoservice.model.MechanicSort;
 import autoservice.model.OrderStatus;
 import autoservice.model.ServiceOrder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,11 +20,10 @@ import java.util.stream.Collectors;
 @Component
 public class MechanicService {
     
-    @Inject
-    private MechanicDAO mechanicDAO;
+    private static final Logger logger = LogManager.getLogger(MechanicService.class);
     
     @Inject
-    private ConnectionManager connectionManager;
+    private MechanicDAO mechanicDAO;
     
     // OrderService получаем через lazy injection, чтобы избежать циклической зависимости
     private OrderService orderService;
@@ -35,13 +32,12 @@ public class MechanicService {
      * Добавить механика.
      */
     public void addMechanic(Mechanic mechanic) {
-        Connection conn = connectionManager.getConnection();
         try {
             mechanicDAO.save(mechanic);
-            conn.commit();
             System.out.println("Добавлен " + mechanic);
-        } catch (SQLException e) {
-            rollback(conn);
+            logger.info("Mechanic added: {}", mechanic);
+        } catch (Exception e) {
+            logger.error("Error adding mechanic: {}", mechanic, e);
             throw new RuntimeException("Ошибка при добавлении механика: " + e.getMessage(), e);
         }
     }
@@ -50,18 +46,18 @@ public class MechanicService {
      * Удалить механика по ID.
      */
     public boolean removeMechanicById(int id) {
-        Connection conn = connectionManager.getConnection();
         try {
             boolean removed = mechanicDAO.deleteById(id);
-            conn.commit();
             if (removed) {
                 System.out.println("Удалён механик № " + id);
+                logger.info("Mechanic removed: id={}", id);
             } else {
                 System.out.println("Механик № " + id + " не найден.");
+                logger.warn("Mechanic not found for removal: id={}", id);
             }
             return removed;
-        } catch (SQLException e) {
-            rollback(conn);
+        } catch (Exception e) {
+            logger.error("Error removing mechanic: id={}", id, e);
             throw new RuntimeException("Ошибка при удалении механика: " + e.getMessage(), e);
         }
     }
@@ -72,7 +68,8 @@ public class MechanicService {
     public Optional<Mechanic> findMechanicById(int id) {
         try {
             return mechanicDAO.findById(id);
-        } catch (SQLException e) {
+        } catch (Exception e) {
+            logger.error("Error finding mechanic: id={}", id, e);
             throw new RuntimeException("Ошибка при поиске механика: " + e.getMessage(), e);
         }
     }
@@ -83,7 +80,8 @@ public class MechanicService {
     public List<Mechanic> getAllMechanics() {
         try {
             return mechanicDAO.findAll();
-        } catch (SQLException e) {
+        } catch (Exception e) {
+            logger.error("Error getting all mechanics", e);
             throw new RuntimeException("Ошибка при получении списка механиков: " + e.getMessage(), e);
         }
     }
@@ -139,18 +137,6 @@ public class MechanicService {
         }
     }
     
-    /**
-     * Откатывает транзакцию при ошибке.
-     */
-    private void rollback(Connection conn) {
-        try {
-            if (conn != null && !conn.isClosed()) {
-                conn.rollback();
-            }
-        } catch (SQLException e) {
-            System.err.println("Ошибка при откате транзакции: " + e.getMessage());
-        }
-    }
 }
 
 
