@@ -1,8 +1,8 @@
 package autoservice.ui.menu;
 
-import autoservice.annotation.Inject;
 import autoservice.config.Configuration;
 import autoservice.service.ServiceManager;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Scanner;
 
@@ -12,7 +12,7 @@ import java.util.Scanner;
 public class ShiftOrderAction implements  IAction {
     private final ServiceManager serviceManager;
     
-    @Inject
+    @Autowired
     private Configuration configuration;
     
     public ShiftOrderAction(ServiceManager serviceManager) {

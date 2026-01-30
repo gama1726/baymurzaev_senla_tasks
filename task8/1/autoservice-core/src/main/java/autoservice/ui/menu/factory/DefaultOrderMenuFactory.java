@@ -1,23 +1,23 @@
 package autoservice.ui.menu.factory;
 
-import autoservice.injection.DIContainer;
 import autoservice.service.ServiceManager;
 import autoservice.ui.menu.*;
+import org.springframework.context.ApplicationContext;
 
 /**
  * Конкретная реализация фабрики для создания пунктов меню заказов.
  */
 public class DefaultOrderMenuFactory implements OrderMenuFactory {
     private final ServiceManager serviceManager;
-    private final DIContainer container;
+    private final ApplicationContext applicationContext;
 
-    public DefaultOrderMenuFactory(ServiceManager serviceManager, DIContainer container) {
+    public DefaultOrderMenuFactory(ServiceManager serviceManager, ApplicationContext applicationContext) {
         this.serviceManager = serviceManager;
-        this.container = container;
+        this.applicationContext = applicationContext;
     }
-    
-    private void injectDependencies(Object action) {
-        container.injectDependencies(action);
+
+    private void autowireAction(Object action) {
+        applicationContext.getAutowireCapableBeanFactory().autowireBean(action);
     }
 
     @Override
@@ -53,14 +53,14 @@ public class DefaultOrderMenuFactory implements OrderMenuFactory {
     @Override
     public MenuItem createDeleteOrderItem() {
         DeleteOrderAction action = new DeleteOrderAction(serviceManager);
-        injectDependencies(action);
+        autowireAction(action);
         return new MenuItem("Удалить заказ", action, null);
     }
 
     @Override
     public MenuItem createShiftOrderItem() {
         ShiftOrderAction action = new ShiftOrderAction(serviceManager);
-        injectDependencies(action);
+        autowireAction(action);
         return new MenuItem("Сместить время заказа", action, null);
     }
 

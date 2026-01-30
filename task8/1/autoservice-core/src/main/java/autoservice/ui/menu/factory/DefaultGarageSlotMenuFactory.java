@@ -1,23 +1,23 @@
 package autoservice.ui.menu.factory;
 
-import autoservice.injection.DIContainer;
 import autoservice.service.ServiceManager;
 import autoservice.ui.menu.*;
+import org.springframework.context.ApplicationContext;
 
 /**
  * Конкретная реализация фабрики для создания пунктов меню гаражных мест.
  */
 public class DefaultGarageSlotMenuFactory implements GarageSlotMenuFactory {
     private final ServiceManager serviceManager;
-    private final DIContainer container;
+    private final ApplicationContext applicationContext;
 
-    public DefaultGarageSlotMenuFactory(ServiceManager serviceManager, DIContainer container) {
+    public DefaultGarageSlotMenuFactory(ServiceManager serviceManager, ApplicationContext applicationContext) {
         this.serviceManager = serviceManager;
-        this.container = container;
+        this.applicationContext = applicationContext;
     }
-    
-    private void injectDependencies(Object action) {
-        container.injectDependencies(action);
+
+    private void autowireAction(Object action) {
+        applicationContext.getAutowireCapableBeanFactory().autowireBean(action);
     }
 
     @Override
@@ -35,14 +35,14 @@ public class DefaultGarageSlotMenuFactory implements GarageSlotMenuFactory {
     @Override
     public MenuItem createAddGarageSlotItem() {
         AddGarageSlotAction action = new AddGarageSlotAction(serviceManager);
-        injectDependencies(action);
+        autowireAction(action);
         return new MenuItem("Добавить гаражное место", action, null);
     }
 
     @Override
     public MenuItem createRemoveGarageSlotItem() {
         RemoveGarageSlotAction action = new RemoveGarageSlotAction(serviceManager);
-        injectDependencies(action);
+        autowireAction(action);
         return new MenuItem("Удалить гаражное место", action, null);
     }
 

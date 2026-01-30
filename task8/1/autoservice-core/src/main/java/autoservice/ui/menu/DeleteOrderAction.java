@@ -1,8 +1,8 @@
 package autoservice.ui.menu;
 
-import autoservice.annotation.Inject;
 import autoservice.config.Configuration;
 import autoservice.service.ServiceManager;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,7 +15,7 @@ public class DeleteOrderAction implements  IAction{
     private static final Logger logger = LogManager.getLogger(DeleteOrderAction.class);
     private final ServiceManager serviceManager;
     
-    @Inject
+    @Autowired
     private Configuration configuration;
 
     public DeleteOrderAction(ServiceManager serviceManager) {

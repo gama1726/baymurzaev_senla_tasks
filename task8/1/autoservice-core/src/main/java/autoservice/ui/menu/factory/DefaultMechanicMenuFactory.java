@@ -1,19 +1,19 @@
 package autoservice.ui.menu.factory;
 
-import autoservice.injection.DIContainer;
 import autoservice.service.ServiceManager;
 import autoservice.ui.menu.*;
+import org.springframework.context.ApplicationContext;
 
 /**
  * Конкретная реализация фабрики для создания пунктов меню механиков.
  */
 public class DefaultMechanicMenuFactory implements MechanicMenuFactory {
     private final ServiceManager serviceManager;
-    private final DIContainer container;
+    private final ApplicationContext applicationContext;
 
-    public DefaultMechanicMenuFactory(ServiceManager serviceManager, DIContainer container) {
+    public DefaultMechanicMenuFactory(ServiceManager serviceManager, ApplicationContext applicationContext) {
         this.serviceManager = serviceManager;
-        this.container = container;
+        this.applicationContext = applicationContext;
     }
 
     @Override
