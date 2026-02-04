@@ -1,6 +1,6 @@
 package autoservice.ui.menu;
-import autoservice.annotation.Inject;
 import autoservice.config.Configuration;
+import org.springframework.beans.factory.annotation.Autowired;
 import autoservice.model.GarageSlot;
 import autoservice.service.ServiceManager;
 
@@ -12,7 +12,7 @@ import java.util.Scanner;
 public class AddGarageSlotAction implements IAction {
     private final ServiceManager serviceManager;
     
-    @Inject
+    @Autowired
     private Configuration configuration;
     
     public AddGarageSlotAction(ServiceManager serviceManager) {

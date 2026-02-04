@@ -1,38 +1,38 @@
 package autoservice.ui.menu.factory;
 
-import autoservice.injection.DIContainer;
 import autoservice.service.ServiceManager;
+import org.springframework.context.ApplicationContext;
 
 /**
  * Конкретная реализация абстрактной фабрики меню.
- * Создает семейства фабрик для различных типов пунктов менюю.
+ * Создает семейства фабрик для различных типов пунктов меню.
  */
 public class DefaultMenuFactory implements AbstractMenuFactory {
     private final ServiceManager serviceManager;
-    private final DIContainer container;
+    private final ApplicationContext applicationContext;
 
-    public DefaultMenuFactory(ServiceManager serviceManager, DIContainer container) {
+    public DefaultMenuFactory(ServiceManager serviceManager, ApplicationContext applicationContext) {
         this.serviceManager = serviceManager;
-        this.container = container;
+        this.applicationContext = applicationContext;
     }
 
     @Override
     public OrderMenuFactory createOrderMenuFactory() {
-        return new DefaultOrderMenuFactory(serviceManager, container);
+        return new DefaultOrderMenuFactory(serviceManager, applicationContext);
     }
 
     @Override
     public MechanicMenuFactory createMechanicMenuFactory() {
-        return new DefaultMechanicMenuFactory(serviceManager, container);
+        return new DefaultMechanicMenuFactory(serviceManager, applicationContext);
     }
 
     @Override
     public GarageSlotMenuFactory createGarageSlotMenuFactory() {
-        return new DefaultGarageSlotMenuFactory(serviceManager, container);
+        return new DefaultGarageSlotMenuFactory(serviceManager, applicationContext);
     }
 
     @Override
     public CapacityMenuFactory createCapacityMenuFactory() {
-        return new DefaultCapacityMenuFactory(serviceManager, container);
+        return new DefaultCapacityMenuFactory(serviceManager, applicationContext);
     }
 }

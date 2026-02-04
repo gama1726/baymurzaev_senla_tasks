@@ -1,8 +1,9 @@
 package autoservice.service;
 
-import autoservice.annotation.Component;
-import autoservice.annotation.Inject;
 import autoservice.dao.GarageSlotDAO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
 import autoservice.model.GarageSlot;
 import autoservice.model.OrderStatus;
 import autoservice.model.ServiceOrder;
@@ -16,15 +17,16 @@ import java.util.stream.Collectors;
 /**
  * Сервис для управления гаражными местами.
  */
-@Component
+@Service
 public class GarageSlotService {
-    
+
     private static final Logger logger = LogManager.getLogger(GarageSlotService.class);
-    
-    @Inject
+
+    @Autowired
     private GarageSlotDAO garageSlotDAO;
-    
-    // OrderService получаем через lazy injection, чтобы избежать циклической зависимости
+
+    @Autowired
+    @Lazy
     private OrderService orderService;
 
     /**
@@ -99,11 +101,6 @@ public class GarageSlotService {
         try {
             List<GarageSlot> allSlots = getGarageSlots();
             List<GarageSlot> free = new ArrayList<>(allSlots);
-            // Получаем OrderService через DAO напрямую, чтобы избежать циклической зависимости
-            if (orderService == null) {
-                // Lazy injection через DIContainer
-                orderService = autoservice.injection.DIContainer.getInstance().getInstance(OrderService.class);
-            }
             orderService.getOrders().stream()
                     .filter(o -> o.getStatus() == OrderStatus.NEW)
                     .filter(o -> o.getTimeSlot().contains(when))

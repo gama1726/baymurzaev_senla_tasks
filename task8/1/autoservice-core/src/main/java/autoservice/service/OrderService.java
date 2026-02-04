@@ -1,8 +1,8 @@
 package autoservice.service;
 
-import autoservice.annotation.Component;
-import autoservice.annotation.Inject;
 import autoservice.dao.ServiceOrderDAO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import autoservice.model.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,15 +14,15 @@ import java.util.stream.Collectors;
 /**
  * Сервис для управления заказами.
  */
-@Component
+@Service
 public class OrderService {
-    
+
     private static final Logger logger = LogManager.getLogger(OrderService.class);
-    
-    @Inject
+
+    @Autowired
     private ServiceOrderDAO orderDAO;
-    
-    @Inject
+
+    @Autowired
     private GarageSlotService garageSlotService;
 
     /**

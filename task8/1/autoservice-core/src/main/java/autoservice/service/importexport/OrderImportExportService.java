@@ -1,8 +1,8 @@
 package autoservice.service.importexport;
 
-import autoservice.annotation.Component;
-import autoservice.annotation.Inject;
 import autoservice.exception.EntityNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import autoservice.exception.ImportExportException;
 import autoservice.model.*;
 import autoservice.service.GarageSlotService;
@@ -25,19 +25,19 @@ import java.util.Optional;
  * Сервис для импорта и экспорта заказов в формате CSV.
  * Автоматически устанавливает связи между объектами (механик, гаражное место).
  */
-@Component
+@Service
 public class OrderImportExportService {
     private static final String CSV_HEADER = "id,mechanicId,garageSlotId,timeSlotStart,timeSlotEnd,price,status,submittedAt,finishedAt";
     private static final String CSV_SEPARATOR = ",";
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
-    @Inject
+    @Autowired
     private OrderService orderService;
-    
-    @Inject
+
+    @Autowired
     private MechanicService mechanicService;
-    
-    @Inject
+
+    @Autowired
     private GarageSlotService garageSlotService;
 
     /**

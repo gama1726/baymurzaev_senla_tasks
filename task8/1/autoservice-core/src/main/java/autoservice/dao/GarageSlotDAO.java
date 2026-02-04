@@ -1,8 +1,8 @@
 package autoservice.dao;
 
-import autoservice.annotation.Component;
-import autoservice.annotation.Inject;
 import autoservice.database.JpaEntityManagerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
 import autoservice.entity.GarageSlotEntity;
 import autoservice.mapper.EntityMapper;
 import autoservice.model.GarageSlot;
@@ -18,12 +18,12 @@ import java.util.stream.Collectors;
 /**
  * DAO для работы с гаражными местами в БД через JPA.
  */
-@Component
+@Repository
 public class GarageSlotDAO implements GenericDAO<GarageSlot, Integer> {
-    
+
     private static final Logger logger = LogManager.getLogger(GarageSlotDAO.class);
-    
-    @Inject
+
+    @Autowired
     private JpaEntityManagerFactory entityManagerFactory;
     
     /**

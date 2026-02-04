@@ -1,14 +1,10 @@
 package autoservice;
 
-import autoservice.config.Configuration;
+import autoservice.config.AppConfig;
 import autoservice.dao.*;
 import autoservice.database.ConnectionManager;
 import autoservice.database.DatabaseInitializer;
 import autoservice.database.JpaEntityManagerFactory;
-import autoservice.injection.ConfigInjector;
-import autoservice.injection.DIContainer;
-import autoservice.model.GarageSlot;
-import autoservice.model.Mechanic;
 import autoservice.service.*;
 import autoservice.service.importexport.*;
 import autoservice.ui.menu.factory.AbstractMenuFactory;
@@ -18,6 +14,7 @@ import autoservice.ui.menu.MenuBuilder;
 import autoservice.ui.menu.MenuController;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -25,95 +22,50 @@ import java.nio.charset.StandardCharsets;
 /**
  * Точка входа в приложение автосервиса.
  *
- * Здесь:
- *  - инициализируется DI контейнер;
- *  - загружается конфигурация через аннотации;
- *  - регистрируются все компоненты;
- *  - получается ServiceManager через DI;
- *  - добавляются тестовые данные (механики, гаражи);
- *  - создаётся Abstract Factory для меню (MenuFactory);
- *  - через MenuBuilder строится корневое меню;
- *  - запускается MenuController (консольный UI по MVC).
+ * Использует Spring (spring-context) для Dependency Injection:
+ *  - конфигурация через AppConfig (Java config);
+ *  - репозитории (DAO) и сервисы — синглтоны;
+ *  - параметры из config.properties внедряются через @Value (PropertySourcesPlaceholderConfigurer).
  */
 public class App {
     private static final Logger logger = LogManager.getLogger(App.class);
-    
+
     public static void main(String[] args) {
-        // Устанавливаем UTF-8 для консоли
         System.setOut(new PrintStream(System.out, true, StandardCharsets.UTF_8));
         System.setErr(new PrintStream(System.err, true, StandardCharsets.UTF_8));
-        
+
         logger.info("Запуск приложения автосервиса");
-        try {
-            // Инициализация DI контейнера
-            DIContainer container = DIContainer.getInstance();
-            
-            // Создание и загрузка конфигурации
-            Configuration configuration = new Configuration();
-            ConfigInjector.injectConfig(configuration);
-            // Регистрируем конфигурацию в контейнере для внедрения в Actions
-            container.registerInstance(Configuration.class, configuration);
-            
-            // Регистрация JpaEntityManagerFactory и инициализация JPA
-            container.registerComponent(JpaEntityManagerFactory.class);
-            JpaEntityManagerFactory jpaEntityManagerFactory = container.getInstance(JpaEntityManagerFactory.class);
+        try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class)) {
+
+            // Инициализация JPA
+            JpaEntityManagerFactory jpaEntityManagerFactory = context.getBean(JpaEntityManagerFactory.class);
             jpaEntityManagerFactory.initialize();
-            
-            // Регистрация ConnectionManager для DatabaseInitializer (используется только для первоначальной инициализации)
-            container.registerComponent(ConnectionManager.class);
-            ConnectionManager connectionManager = container.getInstance(ConnectionManager.class);
-            // Заполняем конфигурацию через аннотации
-            ConfigInjector.injectConfig(connectionManager);
-            // Инициализируем соединение
+
+            // Инициализация ConnectionManager и структуры БД
+            ConnectionManager connectionManager = context.getBean(ConnectionManager.class);
             connectionManager.initialize();
-            
-            // Инициализация структуры БД (используется только для первоначальной инициализации)
-            container.registerComponent(DatabaseInitializer.class);
-            DatabaseInitializer dbInitializer = container.getInstance(DatabaseInitializer.class);
+
+            DatabaseInitializer dbInitializer = context.getBean(DatabaseInitializer.class);
             dbInitializer.initialize();
-            
-            // Регистрация DAO
-            container.registerComponent(MechanicDAO.class);
-            container.registerComponent(GarageSlotDAO.class);
-            container.registerComponent(ServiceOrderDAO.class);
-            
-            // Регистрация сервисов
-            container.registerComponent(OrderService.class);
-            container.registerComponent(MechanicService.class);
-            container.registerComponent(GarageSlotService.class);
-            container.registerComponent(CapacityService.class);
-            container.registerComponent(MechanicImportExportService.class);
-            container.registerComponent(GarageSlotImportExportService.class);
-            container.registerComponent(OrderImportExportService.class);
-            container.registerComponent(ServiceManager.class);
-            
-            // Получение ServiceManager через DI
-            ServiceManager manager = container.getInstance(ServiceManager.class);
 
-            // Тестовые данные уже добавлены через insert_test_data.sql
-            // Если нужно добавить дополнительные данные, можно раскомментировать:
-            // manager.addMechanic(new Mechanic(1, "Андрей"));
-            // manager.addGarageSlot(new GarageSlot(101));
+            // ServiceManager и все зависимости уже созданы Spring (синглтоны)
+            ServiceManager manager = context.getBean(ServiceManager.class);
 
-            // Abstract Factory для пунктов меню
-            AbstractMenuFactory abstractFactory = new DefaultMenuFactory(manager, container);
+            // Abstract Factory для пунктов меню (передаем ApplicationContext для autowire действий)
+            AbstractMenuFactory abstractFactory = new DefaultMenuFactory(manager, context);
 
-            // Builder, который с помощью фабрики собирает структуру меню
             MenuBuilder builder = new MenuBuilder(abstractFactory);
             Menu rootMenu = builder.buildRootMenu();
 
-            // Добавляем shutdown hook для гарантированного закрытия соединений
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 logger.info("Завершение работы приложения (shutdown hook)");
                 connectionManager.closeConnection();
                 jpaEntityManagerFactory.close();
             }));
-            
-            // Контроллер UI (MVC) + главный цикл консольного меню
+
             MenuController controller = new MenuController(rootMenu);
             controller.run();
-            
-            // Закрываем соединения с БД при завершении
+
             logger.info("Завершение работы приложения");
             connectionManager.closeConnection();
             jpaEntityManagerFactory.close();
@@ -124,4 +76,3 @@ public class App {
         }
     }
 }
-
