@@ -4,6 +4,7 @@ import autoservice.config.AppConfig;
 import autoservice.dao.*;
 import autoservice.database.ConnectionManager;
 import autoservice.database.DatabaseInitializer;
+import autoservice.database.FlywayMigrator;
 import autoservice.database.JpaEntityManagerFactory;
 import autoservice.service.*;
 import autoservice.service.importexport.*;
@@ -35,6 +36,10 @@ public class App {
         System.setErr(new PrintStream(System.err, true, StandardCharsets.UTF_8));
 
         logger.info("Запуск приложения автосервиса");
+
+        // Flyway: миграции БД до инициализации JPA
+        FlywayMigrator.run();
+
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class)) {
 
             // Инициализация JPA
