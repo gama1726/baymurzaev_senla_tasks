@@ -30,6 +30,7 @@
         <hibernate.version>6.4.4.Final</hibernate.version>
         <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
         <spring.version>6.1.5</spring.version>
+        <flyway.version>10.14.0</flyway.version>
     </properties>
 
     <dependencyManagement>
@@ -72,6 +73,12 @@
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-context</artifactId>
                 <version>${spring.version}</version>
+            </dependency>
+            <!-- Flyway -->
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-core</artifactId>
+                <version>${flyway.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
