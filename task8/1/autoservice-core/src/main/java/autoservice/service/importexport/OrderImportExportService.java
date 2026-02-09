@@ -1,15 +1,8 @@
 package autoservice.service.importexport;
 
-import autoservice.exception.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import autoservice.exception.ImportExportException;
-import autoservice.model.*;
-import autoservice.service.GarageSlotService;
-import autoservice.service.MechanicService;
-import autoservice.service.OrderService;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,11 +14,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import autoservice.exception.EntityNotFoundException;
+import autoservice.exception.ImportExportException;
+import autoservice.model.GarageSlot;
+import autoservice.model.Mechanic;
+import autoservice.model.OrderStatus;
+import autoservice.model.ServiceOrder;
+import autoservice.model.TimeSlot;
+import autoservice.service.GarageSlotService;
+import autoservice.service.MechanicService;
+import autoservice.service.OrderService;
+
 /**
  * Сервис для импорта и экспорта заказов в формате CSV.
  * Автоматически устанавливает связи между объектами (механик, гаражное место).
  */
 @Service
+@Transactional
 public class OrderImportExportService {
     private static final String CSV_HEADER = "id,mechanicId,garageSlotId,timeSlotStart,timeSlotEnd,price,status,submittedAt,finishedAt";
     private static final String CSV_SEPARATOR = ",";

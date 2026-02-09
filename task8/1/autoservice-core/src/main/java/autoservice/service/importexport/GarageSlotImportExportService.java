@@ -1,12 +1,8 @@
 package autoservice.service.importexport;
 
-import autoservice.exception.ImportExportException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import autoservice.model.GarageSlot;
-import autoservice.service.GarageSlotService;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,10 +11,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import autoservice.exception.ImportExportException;
+import autoservice.model.GarageSlot;
+import autoservice.service.GarageSlotService;
+
 /**
  * Сервис для импорта и экспорта гаражных мест в формате CSV.
  */
 @Service
+@Transactional
 public class GarageSlotImportExportService {
     private static final String CSV_HEADER = "id";
     private static final String CSV_SEPARATOR = ",";

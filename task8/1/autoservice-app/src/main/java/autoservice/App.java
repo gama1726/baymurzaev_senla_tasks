@@ -1,24 +1,22 @@
 package autoservice;
 
-import autoservice.config.AppConfig;
-import autoservice.dao.*;
-import autoservice.database.ConnectionManager;
-import autoservice.database.DatabaseInitializer;
-import autoservice.database.FlywayMigrator;
-import autoservice.database.JpaEntityManagerFactory;
-import autoservice.service.*;
-import autoservice.service.importexport.*;
-import autoservice.ui.menu.factory.AbstractMenuFactory;
-import autoservice.ui.menu.factory.DefaultMenuFactory;
-import autoservice.ui.menu.Menu;
-import autoservice.ui.menu.MenuBuilder;
-import autoservice.ui.menu.MenuController;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
+import autoservice.config.AppConfig;
+import autoservice.database.ConnectionManager;
+import autoservice.database.DatabaseInitializer;
+import autoservice.database.FlywayMigrator;
+import autoservice.service.ServiceManager;
+import autoservice.ui.menu.Menu;
+import autoservice.ui.menu.MenuBuilder;
+import autoservice.ui.menu.MenuController;
+import autoservice.ui.menu.factory.AbstractMenuFactory;
+import autoservice.ui.menu.factory.DefaultMenuFactory;
 
 /**
  * Точка входа в приложение автосервиса.
@@ -42,11 +40,7 @@ public class App {
 
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class)) {
 
-            // Инициализация JPA
-            JpaEntityManagerFactory jpaEntityManagerFactory = context.getBean(JpaEntityManagerFactory.class);
-            jpaEntityManagerFactory.initialize();
-
-            // Инициализация ConnectionManager и структуры БД
+            // Инициализация ConnectionManager и структуры БД (JPA управляется через JpaConfig и @Transactional)
             ConnectionManager connectionManager = context.getBean(ConnectionManager.class);
             connectionManager.initialize();
 
@@ -65,7 +59,6 @@ public class App {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 logger.info("Завершение работы приложения (shutdown hook)");
                 connectionManager.closeConnection();
-                jpaEntityManagerFactory.close();
             }));
 
             MenuController controller = new MenuController(rootMenu);
@@ -73,7 +66,6 @@ public class App {
 
             logger.info("Завершение работы приложения");
             connectionManager.closeConnection();
-            jpaEntityManagerFactory.close();
         } catch (Exception e) {
             logger.error("Критическая ошибка при запуске приложения", e);
             System.err.println("Ошибка при запуске приложения: " + e.getMessage());

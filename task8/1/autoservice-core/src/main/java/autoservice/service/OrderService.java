@@ -1,20 +1,30 @@
 package autoservice.service;
 
-import autoservice.dao.ServiceOrderDAO;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import autoservice.model.*;
+import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import autoservice.dao.ServiceOrderDAO;
+import autoservice.model.Mechanic;
+import autoservice.model.OrderSort;
+import autoservice.model.OrderStatus;
+import autoservice.model.ServiceOrder;
 
 /**
  * Сервис для управления заказами.
  */
 @Service
+@Transactional
 public class OrderService {
 
     private static final Logger logger = LogManager.getLogger(OrderService.class);
