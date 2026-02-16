@@ -1,23 +1,27 @@
 package autoservice.service;
 
-import autoservice.dao.GarageSlotDAO;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import autoservice.dao.GarageSlotDAO;
 import autoservice.model.GarageSlot;
 import autoservice.model.OrderStatus;
 import autoservice.model.ServiceOrder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Сервис для управления гаражными местами.
  */
 @Service
+@Transactional
 public class GarageSlotService {
 
     private static final Logger logger = LogManager.getLogger(GarageSlotService.class);

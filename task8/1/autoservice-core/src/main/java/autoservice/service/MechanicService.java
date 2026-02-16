@@ -1,24 +1,28 @@
 package autoservice.service;
 
-import autoservice.dao.MechanicDAO;
+import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import autoservice.dao.MechanicDAO;
 import autoservice.model.Mechanic;
 import autoservice.model.MechanicSort;
 import autoservice.model.OrderStatus;
-import autoservice.model.ServiceOrder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Сервис для управления механиками.
  */
 @Service
+@Transactional
 public class MechanicService {
 
     private static final Logger logger = LogManager.getLogger(MechanicService.class);

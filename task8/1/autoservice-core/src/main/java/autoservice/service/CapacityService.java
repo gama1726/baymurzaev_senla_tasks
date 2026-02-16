@@ -1,14 +1,16 @@
 package autoservice.service;
 
+import java.time.LocalDateTime;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Сервис для расчета свободных слотов и поиска свободных дат.
  */
 @Service
+@Transactional(readOnly = true)
 public class CapacityService {
 
     @Autowired
