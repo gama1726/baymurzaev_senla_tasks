@@ -1,0 +1,12 @@
+target/
+.git/
+.gitignore
+*.iml
+.idea/
+*.log
+*.db
+*.trace.db
+autoservice_db*
+.DS_Store
+*.md
+!README.md
