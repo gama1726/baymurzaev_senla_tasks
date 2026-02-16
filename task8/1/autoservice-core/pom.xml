@@ -23,6 +23,11 @@
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
         </dependency>
+        <!-- PostgreSQL (для Docker / опционально) -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
         
         <!-- Log4J2 -->
         <dependency>
