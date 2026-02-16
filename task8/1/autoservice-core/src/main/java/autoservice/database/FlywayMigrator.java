@@ -26,9 +26,18 @@ public final class FlywayMigrator {
     public static void run() {
         try {
             Properties config = loadConfig();
-            String url = config.getProperty("db.url");
-            String user = config.getProperty("db.username");
-            String password = config.getProperty("db.password");
+            String url = System.getenv("DB_URL");
+            String user = System.getenv("DB_USERNAME");
+            String password = System.getenv("DB_PASSWORD");
+            if (url == null || url.isEmpty()) {
+                url = config.getProperty("db.url");
+            }
+            if (user == null) {
+                user = config.getProperty("db.username");
+            }
+            if (password == null) {
+                password = config.getProperty("db.password");
+            }
             if (url != null) {
                 url = url.replace("\\:", ":").replace("\\=", "=");
             }

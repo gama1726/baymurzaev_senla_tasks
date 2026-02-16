@@ -38,13 +38,21 @@ public class JpaConfig {
 
     @Bean
     public DataSource dataSource() {
+        String envUrl = System.getenv("DB_URL");
+        String envUser = System.getenv("DB_USERNAME");
+        String envPassword = System.getenv("DB_PASSWORD");
+        String envDriver = System.getenv("DB_DRIVER");
+        String resolvedUrl = envUrl != null && !envUrl.isEmpty() ? envUrl : url;
+        String resolvedUser = envUser != null ? envUser : username;
+        String resolvedPassword = envPassword != null ? envPassword : (password != null ? password : "");
+        String resolvedDriver = envDriver != null && !envDriver.isEmpty() ? envDriver : driverClassName;
+
         DriverManagerDataSource ds = new DriverManagerDataSource();
-        ds.setDriverClassName(driverClassName);
-        String jdbcUrl = url == null ? null : url.replace("\\:", ":").replace("\\=", "=");
-        ds.setUrl(jdbcUrl != null && !jdbcUrl.isEmpty() ? jdbcUrl
-            : "jdbc:h2:./autoservice_db;DB_CLOSE_ON_EXIT=FALSE;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE");
-        ds.setUsername(username != null ? username : "sa");
-        ds.setPassword(password != null ? password : "");
+        ds.setDriverClassName(resolvedDriver);
+        String jdbcUrl = resolvedUrl.replace("\\:", ":").replace("\\=", "=");
+        ds.setUrl(jdbcUrl.isEmpty() ? "jdbc:h2:./autoservice_db;DB_CLOSE_ON_EXIT=FALSE;DATABASE_TO_UPPER=FALSE;AUTO_SERVER=TRUE" : jdbcUrl);
+        ds.setUsername(resolvedUser);
+        ds.setPassword(resolvedPassword);
         return ds;
     }
 
@@ -56,7 +64,13 @@ public class JpaConfig {
         emf.setPersistenceXmlLocation("classpath:META-INF/persistence.xml");
         emf.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
         Properties jpaProps = new Properties();
-        jpaProps.put("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
+        String jdbcUrl = dataSource instanceof DriverManagerDataSource
+            ? ((DriverManagerDataSource) dataSource).getUrl()
+            : "";
+        String dialect = jdbcUrl != null && jdbcUrl.contains("postgresql")
+            ? "org.hibernate.dialect.PostgreSQLDialect"
+            : "org.hibernate.dialect.H2Dialect";
+        jpaProps.put("hibernate.dialect", dialect);
         jpaProps.put("hibernate.hbm2ddl.auto", "update");
         jpaProps.put("hibernate.show_sql", "false");
         jpaProps.put("hibernate.format_sql", "true");
