@@ -87,3 +87,16 @@ mvn exec:java -pl autoservice-app
 Проект использует H2 Database. Настройки подключения в `config.properties`.
 
 При первом запуске автоматически создается структура БД и заполняются тестовые данные.
+
+## Docker
+
+Развёртывание приложения и PostgreSQL в контейнерах (из корня проекта `1/`):
+
+```bash
+docker-compose up --build
+```
+
+- **PostgreSQL**: порт 5432, БД `autoservice`, пользователь/пароль `autoservice`. Данные хранятся в volume `postgres_data` (не удаляются при перезапуске).
+- **Приложение**: порт 8080. REST API: `http://localhost:8080/api/mechanics`, `/api/garage-slots`, `/api/orders` и т.д.
+
+Переменные окружения для БД (задаются в `docker-compose.yaml`): `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DRIVER`. Без них приложение использует H2 из `config.properties`.
