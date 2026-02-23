@@ -100,3 +100,13 @@ docker-compose up --build
 - **Приложение**: порт 8080. REST API: `http://localhost:8080/api/mechanics`, `/api/garage-slots`, `/api/orders` и т.д.
 
 Переменные окружения для БД (задаются в `docker-compose.yaml`): `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DRIVER`. Без них приложение использует H2 из `config.properties`.
+
+## Аутентификация (Spring Security, JWT)
+
+REST API защищён JWT (stateless): при логине возвращается токен, далее он передаётся в заголовке `Authorization: Bearer <token>`.
+
+- **POST /api/auth/login** — логин (body: `{"username":"admin","password":"password"}`). Ответ: `{"token":"...","username":"admin","role":"ADMIN"}`.
+- **Роли**: ADMIN — полный доступ (GET, POST, PUT, DELETE); USER — только чтение (GET).
+- **Тестовые пользователи** (после миграций V3–V4): `admin` / `password` (ADMIN), `user` / `password` (USER).
+- **401** — неверный логин/пароль или невалидный/отсутствующий токен (JSON с сообщением).
+- **403** — недостаточно прав (JSON с сообщением).
