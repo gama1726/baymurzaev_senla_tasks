@@ -11,6 +11,7 @@
         <class>autoservice.entity.MechanicEntity</class>
         <class>autoservice.entity.GarageSlotEntity</class>
         <class>autoservice.entity.ServiceOrderEntity</class>
+        <class>autoservice.entity.UserEntity</class>
         
         <properties>
             <!-- JDBC properties будут загружены программно из config.properties -->
